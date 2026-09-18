@@ -3,52 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OBC Mess - Admin App</title>
-    <!-- Firebase SDKs -->
+    <title>OBC Mess - Admin ERP</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script> <!-- Auth Added -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
-        /* APP BASE STYLES */
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: #F2F4F7; color: #1c1c1e; margin: 0; padding: 0; padding-bottom: 80px; overflow-x: hidden; }
         
-        /* LOGIN SCREEN STYLES */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0f19; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { background: #1a1e24; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: center; border: 1px solid rgba(255,255,255,0.1); width: 90%; max-width: 350px; }
+        .login-box { background: #1a1e24; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: center; width: 90%; max-width: 350px; }
         .login-box h2 { color: #fff; margin: 0 0 10px 0; }
         .login-box p { color: #8e8e93; font-size: 12px; margin-bottom: 20px; }
         .login-box input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #2d3748; background: #0b0f19; color: #fff; margin-bottom: 15px; font-size: 16px; outline: none; }
-        .login-box input:focus { border-color: #007AFF; }
         .login-box button { width: 100%; background: #007AFF; color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .login-box button:active { transform: scale(0.95); }
-        .forgot-pass { color: #007AFF; font-size: 12px; margin-top: 15px; cursor: pointer; text-decoration: underline; }
-
-        /* MAIN APP WRAPPER */
+        
         #main-app { display: none; }
-
         .header { padding: 30px 20px 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .header p { margin: 0; font-size: 11px; color: #8e8e93; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
         .header h1 { margin: 2px 0 0 0; font-size: 24px; font-weight: 800; color: #000; }
-        .admin-avatar { width: 45px; height: 45px; border-radius: 50%; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .admin-avatar { width: 45px; height: 45px; border-radius: 50%; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
 
-        /* CARDS & GRIDS */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-bottom: 25px; }
-        .stat-card { padding: 20px; border-radius: 20px; color: #fff; box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .stat-card { padding: 20px; border-radius: 20px; color: #fff; box-shadow: 0 8px 15px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
+        .stat-card:active { transform: scale(0.95); }
         .stat-card h3 { margin: 0; font-size: 14px; font-weight: 600; opacity: 0.9; }
         .stat-card h2 { margin: 5px 0 0 0; font-size: 32px; font-weight: 800; }
-        .stat-card p { margin: 5px 0 0 0; font-size: 11px; font-weight: 600; opacity: 0.8; }
         .bg-green { background: linear-gradient(135deg, #34C759, #28a745); }
         .bg-red { background: linear-gradient(135deg, #FF3B30, #dc3545); }
         .bg-yellow { background: linear-gradient(135deg, #FFCC00, #ffb300); color: #000; }
         .bg-blue { background: linear-gradient(135deg, #007AFF, #0056b3); }
 
-        /* DIRECTORY LIST */
-        .section-header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-bottom: 15px; }
-        .section-header h4 { margin: 0; font-size: 12px; color: #8e8e93; font-weight: 700; text-transform: uppercase; }
         .list-container { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
-        .list-item { background: #fff; border-radius: 16px; padding: 15px; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.04); cursor: pointer; transition: 0.2s; }
-        .list-item:active { transform: scale(0.98); }
+        .list-item { background: #fff; border-radius: 16px; padding: 15px; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.04); cursor: pointer; }
         .list-avatar { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; margin-right: 15px; }
         .list-info { flex: 1; }
         .list-info h4 { margin: 0; font-size: 16px; font-weight: 700; }
@@ -57,92 +43,78 @@
         .text-green { color: #34C759; background: rgba(52, 199, 89, 0.1); }
         .text-red { color: #FF3B30; background: rgba(255, 59, 48, 0.1); }
         .text-gray { color: #8e8e93; background: rgba(142, 142, 147, 0.1); }
+        .text-blue { color: #007AFF; background: rgba(0, 122, 255, 0.1); } /* Paused Badge */
 
-        /* TABS & NAVIGATION */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #e5e5ea; display: flex; justify-content: space-around; padding: 15px 0 25px 0; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 10px; font-weight: 600; cursor: pointer; }
+        .nav-item.active { color: #007AFF; }
+        .nav-icon { font-size: 22px; margin-bottom: 4px; }
+
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #e5e5ea; display: flex; justify-content: space-around; padding: 15px 0 25px 0; z-index: 100; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 10px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .nav-item.active { color: #007AFF; }
-        .nav-icon { font-size: 22px; margin-bottom: 4px; }
-
-        /* FORMS */
         .form-card { background: #fff; margin: 0 20px; border-radius: 20px; padding: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 11px; color: #8e8e93; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
-        .input-group input, .input-group select { width: 100%; background: #F2F4F7; border: 1px solid #e5e5ea; padding: 14px; border-radius: 12px; font-size: 15px; outline: none; transition: 0.3s;}
-        .input-group input:focus { border-color:#007AFF; background:#fff;}
+        .input-group input, .input-group select { width: 100%; background: #F2F4F7; border: 1px solid #e5e5ea; padding: 14px; border-radius: 12px; font-size: 15px; outline: none; }
         .upload-btn { background: rgba(0, 122, 255, 0.1); border: 2px dashed #007AFF; padding: 15px; border-radius: 12px; text-align: center; color: #007AFF; font-weight: 700; position: relative; }
         .upload-btn input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
-        
         .btn-main { width: 100%; background: #000; color: #fff; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; transition: 0.2s;}
-        .btn-main:active { transform: scale(0.97); }
-        .btn-danger { background: transparent; color: #FF3B30; border: 2px solid #FF3B30; }
-
-        /* SETTINGS TAB SPECIFIC */
-        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 18px; border-bottom: 1px solid #e5e5ea; cursor: pointer; }
-        .setting-item:last-child { border-bottom: none; }
-        .setting-item span { font-size: 16px; font-weight: 600; color: #1c1c1e; }
-        .setting-icon { background: rgba(0, 122, 255, 0.1); color: #007AFF; padding: 10px; border-radius: 12px; font-size: 18px; margin-right: 15px; }
         
-        /* POPUP MODALS */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 300; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
-        .modal-box { background: #fff; width: 100%; max-width: 360px; border-radius: 20px; padding: 25px; position: relative; animation: popIn 0.3s ease; }
-        .btn-close-modal { position: absolute; top: 15px; right: 15px; font-size: 18px; font-weight: bold; color: #888; background: none; border: none; cursor: pointer; }
+        .modal-box { background: #fff; width: 100%; max-width: 360px; border-radius: 20px; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto;}
+        .btn-close-modal { position: absolute; top: 15px; right: 15px; font-size: 18px; font-weight: bold; background: none; border: none; cursor: pointer; }
 
-        /* PROFILE MODAL (From Previous) */
         #profile-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #F2F4F7; z-index: 200; transform: translateY(100%); transition: transform 0.4s ease; overflow-y: auto; padding-bottom: 40px; }
         #profile-modal.open { transform: translateY(0); }
         .profile-header { background: #fff; padding: 40px 20px 20px 20px; text-align: center; border-radius: 0 0 30px 30px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
         .btn-back { position: absolute; top: 20px; left: 20px; font-size: 24px; font-weight: bold; cursor: pointer; }
-        .btn-edit { position: absolute; top: 20px; right: 20px; font-size: 22px; cursor: pointer; background: #F2F4F7; padding: 8px; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .profile-pic { width: 110px; height: 110px; border-radius: 30px; object-fit: cover; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .profile-header h2 { margin: 0; font-size: 22px; font-weight: 800; }
-        .profile-header p { margin: 5px 0 15px 0; color: #8e8e93; font-size: 14px; font-weight: 600; }
+        .btn-edit { position: absolute; top: 20px; right: 20px; font-size: 22px; cursor: pointer; background: #F2F4F7; padding: 8px; border-radius: 50%; }
+        .profile-pic { width: 110px; height: 110px; border-radius: 30px; object-fit: cover; margin-bottom: 10px; }
         .days-left-badge { display: inline-block; padding: 8px 20px; background: #000; color: #fff; border-radius: 20px; font-weight: 700; font-size: 14px; margin-bottom: 10px;}
-        .expired { background: #FF3B30; }
-        .banned-badge { background: #8e8e93; }
+        .expired { background: #FF3B30; } .paused-badge { background: #007AFF; }
+        
+        .btn-pause { background: #007AFF; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 10px; width: 100%; font-size: 16px;}
 
-        .calendar-card { background: #fff; margin: 20px; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .cal-title { font-size: 14px; font-weight: 700; margin-bottom: 15px; }
+        .calendar-card { background: #fff; margin: 20px; border-radius: 20px; padding: 20px; }
         .cal-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
-        .cal-date { font-weight: 700; font-size: 13px; color: #000; width: 60px; }
+        .cal-date { font-weight: 700; font-size: 13px; width: 60px; }
         .meal-dots { display: flex; gap: 8px; }
         .dot { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; }
         .dot.yes { background: rgba(52, 199, 89, 0.15); color: #28a745; }
         .dot.no { background: rgba(255, 59, 48, 0.1); color: #FF3B30; }
+        .dot.pause { background: rgba(0, 122, 255, 0.15); color: #007AFF; } /* Blue Pause */
+        .dot.due { background: rgba(255, 152, 0, 0.15); color: #ff9800; } /* Yellow Due Entry */
+
+        .breakdown-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #eee;}
     </style>
 </head>
 <body>
 
-    <!-- SECURE FIREBASE LOGIN SCREEN -->
     <div id="login-overlay">
         <div class="login-box">
             <h2>Admin Login</h2>
-            <p>Enter Master Credentials</p>
             <input type="email" id="admin-email" placeholder="Email Address">
             <input type="password" id="admin-pass" placeholder="Password">
             <button onclick="loginWithFirebase()">Secure Login</button>
-            <div class="forgot-pass" onclick="resetPassword()">Forgot Password?</div>
         </div>
     </div>
 
-    <!-- MAIN APP WRAPPER -->
     <div id="main-app">
-        <!-- 1. HOME TAB -->
+        <!-- HOME TAB -->
         <div id="tab-home" class="tab-content active">
             <div class="header">
                 <div><p>Welcome Back</p><h1>Admin Panel</h1></div>
                 <div class="admin-avatar">A</div>
             </div>
 
+            <!-- Clickable Stats -->
             <div class="stats-grid">
-                <div class="stat-card bg-green"><h3>Active</h3><h2 id="stat-active">0</h2><p>Fee Paid</p></div>
-                <div class="stat-card bg-red"><h3>Overdue</h3><h2 id="stat-due">0</h2><p>Action Req.</p></div>
-                <div class="stat-card bg-yellow"><h3>Capacity</h3><h2 id="stat-total">0</h2><p>Registered</p></div>
-                <div class="stat-card bg-blue"><h3>Meals</h3><h2 id="stat-meals">0</h2><p>Served Today</p></div>
+                <div class="stat-card bg-green" onclick="filterByStatus('active')"><h3>Active</h3><h2 id="stat-active">0</h2><p>Click to view</p></div>
+                <div class="stat-card bg-red" onclick="filterByStatus('fee_due')"><h3>Overdue</h3><h2 id="stat-due">0</h2><p>Click to view</p></div>
+                <div class="stat-card bg-yellow" onclick="filterByStatus('all')"><h3>Total List</h3><h2 id="stat-total">0</h2><p>Registered</p></div>
+                <div class="stat-card bg-blue" onclick="showMealsModal()"><h3>Meals</h3><h2 id="stat-meals">0</h2><p>Click details</p></div>
             </div>
 
             <div class="section-header"><h4>Students Directory</h4></div>
@@ -152,7 +124,7 @@
             <div class="list-container" id="student-list"></div>
         </div>
 
-        <!-- 2. ADD STUDENT TAB -->
+        <!-- ADD STUDENT TAB -->
         <div id="tab-add" class="tab-content">
             <div class="header"><div><p>Registration</p><h1>Add Student</h1></div></div>
             <div class="form-card">
@@ -163,65 +135,33 @@
                         <input type="file" id="stu-photo" accept="image/*" capture="environment" onchange="previewFile('stu-photo', 'file-name')">
                     </div>
                 </div>
-                <div class="input-group"><label>Student Code</label><input type="text" id="stu-code" required></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="input-group"><label>Code</label><input type="text" id="stu-code" required></div>
+                    <div class="input-group"><label>Room</label><input type="text" id="stu-room" required></div>
+                </div>
                 <div class="input-group"><label>Full Name</label><input type="text" id="stu-name" required></div>
-                <div class="input-group"><label>Room Number</label><input type="text" id="stu-room" required></div>
-                <div class="input-group"><label>Fees Valid Till</label><input type="date" id="stu-date" required></div>
-                <button class="btn-main" id="btn-save" onclick="saveStudent()">Save Record</button>
-            </div>
-        </div>
-
-        <!-- 3. SETTINGS TAB (NEW) -->
-        <div id="tab-settings" class="tab-content">
-            <div class="header"><div><p>Preferences</p><h1>Settings</h1></div></div>
-            
-            <div class="form-card" style="padding: 10px;">
-                <div class="setting-item" onclick="openPasswordModal()">
-                    <div style="display:flex; align-items:center;">
-                        <span class="setting-icon">🔒</span>
-                        <span>Change Password</span>
+                
+                <!-- New Payment Fields -->
+                <div class="input-group"><label>Start Date (From)</label><input type="date" id="stu-start"></div>
+                <div class="input-group"><label>Fee Valid Till (To)</label><input type="date" id="stu-date" required></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="input-group">
+                        <label>Pay Mode</label>
+                        <select id="stu-pay-mode"><option>Cash</option><option>Online</option></select>
                     </div>
-                    <span style="color:#a0aec0;">❯</span>
+                    <div class="input-group"><label>Amount (₹)</label><input type="number" id="stu-amount" placeholder="e.g. 2500"></div>
                 </div>
                 
-                <div class="setting-item" onclick="logoutFirebase()">
-                    <div style="display:flex; align-items:center;">
-                        <span class="setting-icon" style="color:#FF3B30; background:rgba(255,59,48,0.1);">🚪</span>
-                        <span style="color:#FF3B30;">Logout Account</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div style="text-align:center; padding:20px; color:#a0aec0; font-size:12px;">
-                Logged in as: <br><b id="admin-email-display">loading...</b>
+                <button class="btn-main" id="btn-save" onclick="saveStudent()">💾 Save Record</button>
             </div>
         </div>
 
-        <!-- BOTTOM NAV -->
         <div class="bottom-nav">
             <div class="nav-item active" onclick="switchTab('tab-home', this)"><div class="nav-icon">🏠</div><span>Home</span></div>
             <div class="nav-item" onclick="switchTab('tab-add', this)"><div class="nav-icon">➕</div><span>Add New</span></div>
-            <div class="nav-item" onclick="switchTab('tab-settings', this)"><div class="nav-icon">⚙️</div><span>Settings</span></div>
         </div>
 
-        <!-- CHANGE PASSWORD MODAL -->
-        <div id="pass-modal" class="modal-overlay">
-            <div class="modal-box">
-                <button class="btn-close-modal" onclick="closePasswordModal()">✖</button>
-                <h3 style="margin-top:0; margin-bottom: 20px;">🔒 Change Password</h3>
-                <div class="input-group">
-                    <label>Current Password</label>
-                    <input type="password" id="old-pass" placeholder="Enter Old Password">
-                </div>
-                <div class="input-group">
-                    <label>New Password</label>
-                    <input type="password" id="new-pass" placeholder="Enter New Password (Min 6 chars)">
-                </div>
-                <button class="btn-main" style="background:#007AFF;" id="btn-update-pass" onclick="updatePassword()">Update Password</button>
-            </div>
-        </div>
-
-        <!-- PROFILE VIEW & EDIT MODAL (Combined from previous) -->
+        <!-- PROFILE VIEW -->
         <div id="profile-modal">
             <div class="profile-header">
                 <div class="btn-back" onclick="closeProfile()">❮</div>
@@ -230,41 +170,52 @@
                 <h2 id="prof-name">Name</h2>
                 <p id="prof-room">Room: - | Code: -</p>
                 <div id="prof-days" class="days-left-badge">Loading...</div>
+                
+                <!-- PAUSE BUTTON -->
+                <div style="padding: 0 20px;">
+                    <button id="btn-pause" class="btn-pause" onclick="togglePause()">⏸️ Pause Account</button>
+                </div>
             </div>
-            <div class="calendar-card"><div class="cal-title">📅 This Month's Meal Tracking</div><div id="cal-body">Loading...</div></div>
+            <div class="calendar-card">
+                <div class="cal-title">📅 This Month's Meal Tracking</div>
+                <div id="cal-body">Loading...</div>
+            </div>
         </div>
 
+        <!-- EDIT POPUP -->
         <div id="edit-popup" class="modal-overlay">
-            <div class="modal-box" style="max-height: 90vh; overflow-y: auto;">
+            <div class="modal-box">
                 <button class="btn-close-modal" onclick="closeEditPopup()">✖</button>
                 <h3 style="margin-top:0;">✏️ Edit Details</h3>
                 <div class="input-group"><label>Name</label><input type="text" id="edit-name"></div>
-                <div class="input-group"><label>Room</label><input type="text" id="edit-room"></div>
+                <div class="input-group"><label>Fee Valid Till</label><input type="date" id="edit-date"></div>
                 <div class="input-group">
                     <label>Account Status</label>
                     <select id="edit-status">
                         <option value="active">🟢 Active</option>
-                        <option value="fee_due">🟠 Fee Due (Expired)</option>
-                        <option value="banned">🔴 Banned / Blocked</option>
+                        <option value="fee_due">🟠 Fee Due</option>
+                        <option value="paused">⏸️ Paused</option>
+                        <option value="banned">🔴 Banned</option>
                     </select>
                 </div>
-                <div class="input-group"><label>Fee Valid Till</label><input type="date" id="edit-date"></div>
-                <div class="input-group">
-                    <label>Update Photo</label>
-                    <div class="upload-btn" style="padding: 10px;">
-                        <span id="edit-file-name" style="font-size:12px;">📸 Change Photo</span>
-                        <input type="file" id="edit-photo" accept="image/*" capture="environment" onchange="previewFile('edit-photo', 'edit-file-name')">
-                    </div>
-                </div>
                 <button class="btn-main" style="background:#007AFF;" onclick="updateProfile()">💾 Save Changes</button>
-                <button class="btn-main btn-danger" onclick="deleteStudent()">🗑️ Delete Student</button>
+            </div>
+        </div>
+
+        <!-- MEALS BREAKDOWN MODAL -->
+        <div id="meals-modal" class="modal-overlay">
+            <div class="modal-box">
+                <button class="btn-close-modal" onclick="document.getElementById('meals-modal').style.display='none'">✖</button>
+                <h3 style="margin-top:0;">🍽️ Today's Meals</h3>
+                <div class="breakdown-row"><span>Breakfast:</span> <span id="md-b">0</span></div>
+                <div class="breakdown-row"><span>Lunch:</span> <span id="md-l">0</span></div>
+                <div class="breakdown-row" style="border:none;"><span>Dinner:</span> <span id="md-d">0</span></div>
             </div>
         </div>
 
     </div>
 
 <script>
-    // --- FIREBASE INITIALIZATION ---
     const firebaseConfig = {
       apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE",
       authDomain: "obc-mess-system.firebaseapp.com",
@@ -273,112 +224,43 @@
       messagingSenderId: "501219370424",
       appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d"
     };
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // --- 1. FIREBASE AUTHENTICATION LOGIC ---
+    let allStudents = [];
+    let todayAttendance = [];
+    let currentActiveCode = "";
+    let currentActivePhoto = ""; 
 
-    // Monitor Auth State
     auth.onAuthStateChanged((user) => {
         if (user) {
-            // User is signed in!
             document.getElementById("login-overlay").style.display = "none";
             document.getElementById("main-app").style.display = "block";
-            document.getElementById("admin-email-display").innerText = user.email;
-            startDatabaseSync(); // Start loading data ONLY when logged in
+            // Default Start Date setup
+            document.getElementById("stu-start").value = new Date().toISOString().split('T')[0];
+            startDatabaseSync(); 
         } else {
-            // User is signed out!
             document.getElementById("main-app").style.display = "none";
             document.getElementById("login-overlay").style.display = "flex";
         }
     });
 
-    // Login Function
     function loginWithFirebase() {
-        let email = document.getElementById("admin-email").value;
-        let pass = document.getElementById("admin-pass").value;
-        
-        if(!email || !pass) return alert("Email aur Password dono daalein!");
-
-        auth.signInWithEmailAndPassword(email, pass)
-            .then(() => {
-                document.getElementById("admin-pass").value = ""; // Clear password box
-            })
-            .catch((error) => {
-                alert("❌ Login Failed: " + error.message);
-            });
+        let e = document.getElementById("admin-email").value, p = document.getElementById("admin-pass").value;
+        auth.signInWithEmailAndPassword(e, p).catch(err => alert("❌ Login Failed!"));
     }
 
-    // Logout Function
-    function logoutFirebase() {
-        if(confirm("Are you sure you want to logout?")) {
-            auth.signOut();
-        }
+    function getDaysLeft(dateStr) {
+        let today = new Date(); today.setHours(0,0,0,0);
+        let target = new Date(dateStr);
+        return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
     }
-
-    // Forgot Password (Sends Reset Link to Email)
-    function resetPassword() {
-        let email = document.getElementById("admin-email").value;
-        if(!email) {
-            alert("⚠️ Please enter your Email address in the box first to get reset link.");
-            return;
-        }
-        auth.sendPasswordResetEmail(email)
-            .then(() => {
-                alert("📩 Password Reset Link has been sent to your Email! Check your inbox.");
-            })
-            .catch((error) => {
-                alert("Error: " + error.message);
-            });
-    }
-
-    // Change Password inside Settings
-    function openPasswordModal() { document.getElementById('pass-modal').style.display = 'flex'; }
-    function closePasswordModal() { document.getElementById('pass-modal').style.display = 'none'; }
-
-    async function updatePassword() {
-        let oldPass = document.getElementById("old-pass").value;
-        let newPass = document.getElementById("new-pass").value;
-        let btn = document.getElementById("btn-update-pass");
-
-        if(!oldPass || !newPass) return alert("Please fill both password fields.");
-        if(newPass.length < 6) return alert("New password must be at least 6 characters.");
-
-        btn.innerText = "⏳ Verifying...";
-        
-        const user = auth.currentUser;
-        // Step 1: Re-authenticate to prove it's really the admin
-        const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPass);
-
-        try {
-            await user.reauthenticateWithCredential(credential);
-            // Step 2: Update Password
-            await user.updatePassword(newPass);
-            alert("✅ Password Changed Successfully! Next time login with your new password.");
-            closePasswordModal();
-            document.getElementById("old-pass").value = "";
-            document.getElementById("new-pass").value = "";
-        } catch(error) {
-            alert("❌ Failed: " + error.message);
-        } finally {
-            btn.innerText = "Update Password";
-        }
-    }
-
-
-    // --- 2. CORE DATABASE SYSTEM (Runs only when Auth is true) ---
-    let allStudents = [];
-    let currentActiveCode = "";
-    let currentActivePhoto = ""; 
 
     function startDatabaseSync() {
         db.collection("students").onSnapshot((snap) => {
             allStudents = [];
             let tTotal = 0, tActive = 0, tDue = 0;
-            
             snap.forEach(doc => {
                 let data = doc.data();
                 let days = getDaysLeft(data.feeValidTill);
@@ -388,7 +270,8 @@
                 }
                 allStudents.push(data);
                 tTotal++;
-                if(data.status !== 'banned') { days >= 0 ? tActive++ : tDue++; }
+                if(data.status === 'active') tActive++;
+                else if(data.status === 'fee_due') tDue++;
             });
             document.getElementById("stat-total").innerText = tTotal;
             document.getElementById("stat-active").innerText = tActive;
@@ -398,11 +281,12 @@
 
         let todayStr = new Date().toISOString().split('T')[0];
         db.collection("attendance").where("date", "==", todayStr).onSnapshot(snap => {
+            todayAttendance = [];
+            snap.forEach(doc => todayAttendance.push(doc.data()));
             document.getElementById("stat-meals").innerText = snap.size;
         });
     }
 
-    // --- NAVIGATION & UI HELPER FUNCTIONS ---
     function switchTab(tabId, el) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
@@ -410,10 +294,22 @@
         el.classList.add('active');
     }
 
-    function getDaysLeft(dateStr) {
-        let today = new Date(); today.setHours(0,0,0,0);
-        let target = new Date(dateStr);
-        return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    function filterByStatus(status) {
+        document.getElementById('search-box').value = "";
+        if(status === 'all') renderList(allStudents);
+        else renderList(allStudents.filter(s => s.status === status));
+    }
+
+    function showMealsModal() {
+        let b=0, l=0, d=0;
+        todayAttendance.forEach(a => {
+            let m = a.meal.toLowerCase();
+            if(m === 'breakfast') b++; else if(m === 'lunch') l++; else if(m === 'dinner') d++;
+        });
+        document.getElementById('md-b').innerText = b;
+        document.getElementById('md-l').innerText = l;
+        document.getElementById('md-d').innerText = d;
+        document.getElementById('meals-modal').style.display = 'flex';
     }
 
     function renderList(list) {
@@ -421,17 +317,15 @@
         container.innerHTML = "";
         list.forEach(stu => {
             let days = getDaysLeft(stu.feeValidTill);
-            let badgeClass = 'text-green';
-            let badgeText = days >= 0 ? days + ' Days' : 'Overdue';
+            let badgeClass = 'text-green', badgeText = days >= 0 ? days + ' Days' : 'Overdue';
             if(stu.status === 'banned') { badgeClass = 'text-gray'; badgeText = 'BANNED'; } 
+            else if(stu.status === 'paused') { badgeClass = 'text-blue'; badgeText = 'PAUSED ⏸'; }
             else if(days < 0) { badgeClass = 'text-red'; }
 
-            container.innerHTML += `
-                <div class="list-item" onclick="openProfile('${stu.code}')">
-                    <img src="${stu.photo}" class="list-avatar">
-                    <div class="list-info"><h4>${stu.name}</h4><p>Code: ${stu.code} | Room: ${stu.room}</p></div>
-                    <div><span class="badge ${badgeClass}">${badgeText}</span></div>
-                </div>`;
+            container.innerHTML += `<div class="list-item" onclick="openProfile('${stu.code}')">
+                <img src="${stu.photo}" class="list-avatar">
+                <div class="list-info"><h4>${stu.name}</h4><p>Code: ${stu.code} | Room: ${stu.room}</p></div>
+                <div><span class="badge ${badgeClass}">${badgeText}</span></div></div>`;
         });
     }
 
@@ -447,111 +341,109 @@
 
     function compressImage(file) {
         return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
+            let reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = e => {
-                const img = new Image(); img.src = e.target.result;
+                let img = new Image(); img.src = e.target.result;
                 img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = 200; canvas.height = 200;
-                    canvas.getContext('2d').drawImage(img, 0, 0, 200, 200);
-                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    let cvs = document.createElement('canvas'); cvs.width = 200; cvs.height = 200;
+                    cvs.getContext('2d').drawImage(img, 0, 0, 200, 200);
+                    resolve(cvs.toDataURL('image/jpeg', 0.6));
                 };
             };
         });
     }
 
-    // --- STUDENT MANAGEMENT ---
     async function saveStudent() {
-        const code = document.getElementById("stu-code").value, name = document.getElementById("stu-name").value, room = document.getElementById("stu-room").value, date = document.getElementById("stu-date").value, file = document.getElementById("stu-photo").files[0];
-        if(!code || !name || !date) return alert("Code, Name aur Date zaroori hai!");
+        let code = document.getElementById("stu-code").value, name = document.getElementById("stu-name").value, room = document.getElementById("stu-room").value, dateTo = document.getElementById("stu-date").value, dateFrom = document.getElementById("stu-start").value, mode = document.getElementById("stu-pay-mode").value, amt = document.getElementById("stu-amount").value, file = document.getElementById("stu-photo").files[0];
+        if(!code || !name || !dateTo) return alert("Code, Name, Date required!");
         document.getElementById("btn-save").innerText = "⏳ Saving...";
         let photoUrl = file ? await compressImage(file) : `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
-        await db.collection("students").doc(code).set({ code, name, room, feeValidTill: date, photo: photoUrl, status: "active" });
+        
+        await db.collection("students").doc(code).set({ code, name, room, startDate: dateFrom, feeValidTill: dateTo, paymentMode: mode, paymentAmount: amt, photo: photoUrl, status: "active", pauseHistory: [] });
         alert("✅ Student Added!");
-        document.getElementById("btn-save").innerText = "Save Record";
-        document.getElementById("file-name").innerText = "📸 Tap to Open Camera";
-        document.getElementById("stu-code").value = ""; document.getElementById("stu-name").value = ""; document.getElementById("stu-room").value = "";
+        document.getElementById("btn-save").innerText = "💾 Save Record";
     }
 
     async function openProfile(code) {
-        currentActiveCode = code;
-        let stu = allStudents.find(s => s.code === code);
-        currentActivePhoto = stu.photo; 
+        currentActiveCode = code; let stu = allStudents.find(s => s.code === code); currentActivePhoto = stu.photo; 
+        document.getElementById("prof-img").src = stu.photo; document.getElementById("prof-name").innerText = stu.name; document.getElementById("prof-room").innerText = `Room: ${stu.room} | Code: ${stu.code}`;
         
-        document.getElementById("prof-img").src = stu.photo;
-        document.getElementById("prof-name").innerText = stu.name;
-        document.getElementById("prof-room").innerText = `Room: ${stu.room} | Code: ${stu.code}`;
+        let days = getDaysLeft(stu.feeValidTill), badge = document.getElementById("prof-days"), pBtn = document.getElementById("btn-pause");
         
-        let days = getDaysLeft(stu.feeValidTill);
-        let badge = document.getElementById("prof-days");
-        if(stu.status === 'banned') { badge.innerText = `BANNED / BLOCKED`; badge.className = "days-left-badge banned-badge"; } 
-        else { badge.innerText = days >= 0 ? `${days} Days Left` : `Expired (${Math.abs(days)} Days ago)`; badge.className = days >= 0 ? "days-left-badge" : "days-left-badge expired"; }
+        if(stu.status === 'banned') { badge.innerText = `BANNED`; badge.className = "days-left-badge expired"; pBtn.style.display="none";} 
+        else if(stu.status === 'paused') { badge.innerText = `PAUSED (On Leave)`; badge.className = "days-left-badge paused-badge"; pBtn.style.display="block"; pBtn.innerText="▶️ Resume Account"; pBtn.style.background="#34C759"; }
+        else { badge.innerText = days >= 0 ? `${days} Days Left` : `Expired`; badge.className = days >= 0 ? "days-left-badge" : "days-left-badge expired"; pBtn.style.display="block"; pBtn.innerText="⏸️ Pause Account"; pBtn.style.background="#007AFF"; }
 
         document.getElementById("profile-modal").classList.add("open");
-        loadCalendar(code);
+        loadCalendar(code, stu);
     }
     function closeProfile() { document.getElementById("profile-modal").classList.remove("open"); }
 
+    async function togglePause() {
+        let stu = allStudents.find(s => s.code === currentActiveCode);
+        let today = new Date().toISOString().split('T')[0];
+
+        if(stu.status === 'paused') { // Resume
+            let pDate = new Date(stu.lastPauseDate), tDate = new Date(today);
+            let daysPaused = Math.floor((tDate - pDate)/(1000*60*60*24));
+            let newExp = new Date(stu.feeValidTill); newExp.setDate(newExp.getDate() + daysPaused);
+            let hist = stu.pauseHistory || []; hist.push({start: stu.lastPauseDate, end: today});
+
+            await db.collection("students").doc(currentActiveCode).update({ status: 'active', lastPauseDate: null, pauseHistory: hist, feeValidTill: newExp.toISOString().split('T')[0] });
+            alert(`✅ Resumed! Expiry extended by ${daysPaused} days.`);
+        } else { // Pause
+            await db.collection("students").doc(currentActiveCode).update({ status: 'paused', lastPauseDate: today });
+            alert("⏸️ Account Paused! Meals will not be cut.");
+        }
+        openProfile(currentActiveCode);
+    }
+
     function openEditPopup() {
         let stu = allStudents.find(s => s.code === currentActiveCode);
-        document.getElementById("edit-name").value = stu.name;
-        document.getElementById("edit-room").value = stu.room;
-        document.getElementById("edit-date").value = stu.feeValidTill;
-        document.getElementById("edit-status").value = stu.status || "active";
-        document.getElementById("edit-file-name").innerText = "📸 Change Photo";
-        document.getElementById("edit-photo").value = "";
+        document.getElementById("edit-name").value = stu.name; document.getElementById("edit-date").value = stu.feeValidTill; document.getElementById("edit-status").value = stu.status;
         document.getElementById("edit-popup").style.display = "flex";
     }
     function closeEditPopup() { document.getElementById("edit-popup").style.display = "none"; }
-
     async function updateProfile() {
-        let btn = document.querySelector("#edit-popup .btn-update-profile"); // Safety fallback
-        if(!btn) btn = document.getElementById("edit-popup").querySelector(".btn-main");
-        
-        let uName = document.getElementById("edit-name").value, uRoom = document.getElementById("edit-room").value, uDate = document.getElementById("edit-date").value, uStatus = document.getElementById("edit-status").value, file = document.getElementById("edit-photo").files[0];
-        let finalPhoto = currentActivePhoto;
-        if(file) finalPhoto = await compressImage(file); 
-
-        await db.collection("students").doc(currentActiveCode).update({ name: uName, room: uRoom, feeValidTill: uDate, status: uStatus, photo: finalPhoto });
-        closeEditPopup(); 
-        openProfile(currentActiveCode); 
+        let uName = document.getElementById("edit-name").value, uDate = document.getElementById("edit-date").value, uStatus = document.getElementById("edit-status").value;
+        let finalPhoto = currentActivePhoto; let file = document.getElementById("edit-photo").files[0]; if(file) finalPhoto = await compressImage(file); 
+        await db.collection("students").doc(currentActiveCode).update({ name: uName, feeValidTill: uDate, status: uStatus, photo: finalPhoto });
+        closeEditPopup(); openProfile(currentActiveCode); 
     }
 
-    async function deleteStudent() {
-        if(confirm("⚠️ WARNING: Kya aap sach mein is student ka pura record DELETE karna chahte hain?")) {
-            await db.collection("students").doc(currentActiveCode).delete();
-            alert("🗑️ Student Record Deleted!");
-            closeEditPopup(); closeProfile();
+    // CHECK IF A DATE WAS PAUSED
+    function isDatePaused(dateStr, stu) {
+        let d = new Date(dateStr);
+        if(stu.lastPauseDate && d >= new Date(stu.lastPauseDate)) return true;
+        if(stu.pauseHistory) {
+            for(let h of stu.pauseHistory) { if(d >= new Date(h.start) && d < new Date(h.end)) return true; }
         }
+        return false;
     }
 
-    async function loadCalendar(code) {
-        const calBody = document.getElementById("cal-body");
-        calBody.innerHTML = "Fetching records...";
-        try {
-            let todayDate = new Date(), year = todayDate.getFullYear(), month = String(todayDate.getMonth() + 1).padStart(2, '0'), daysInMonth = todayDate.getDate(); 
-            let logs = {};
-            const snap = await db.collection("attendance").where("code", "==", code).get();
+    async function loadCalendar(code, stu) {
+        const calBody = document.getElementById("cal-body"); calBody.innerHTML = "Fetching...";
+        let todayDate = new Date(), year = todayDate.getFullYear(), month = String(todayDate.getMonth() + 1).padStart(2, '0'), daysInMonth = todayDate.getDate(); 
+        let logs = {};
+        const snap = await db.collection("attendance").where("code", "==", code).get();
 
-            snap.forEach(doc => {
-                let d = doc.data();
-                if(d.date.startsWith(`${year}-${month}`)) {
-                    if(!logs[d.date]) logs[d.date] = {};
-                    logs[d.date][d.meal.toLowerCase()] = true; 
-                }
-            });
+        snap.forEach(doc => { let d = doc.data(); if(d.date.startsWith(`${year}-${month}`)) { if(!logs[d.date]) logs[d.date] = {}; logs[d.date][d.meal.toLowerCase()] = {isDue: d.isDue}; } });
 
-            let html = "";
-            for(let i = daysInMonth; i >= 1; i--) {
-                let dateStr = `${year}-${month}-${String(i).padStart(2, '0')}`;
-                let dLog = logs[dateStr] || {};
-                let b = dLog['breakfast'] ? 'yes">✔ B' : 'no">❌ B', l = dLog['lunch'] ? 'yes">✔ L' : 'no">❌ L', d = dLog['dinner'] ? 'yes">✔ D' : 'no">❌ D';
-                let dateDisplay = new Date(dateStr).toLocaleDateString('en-US', {month:'short', day:'numeric'});
-                html += `<div class="cal-row"><div class="cal-date">${dateDisplay}</div><div class="meal-dots"><div class="dot ${b}</div><div class="dot ${l}</div><div class="dot ${d}</div></div></div>`;
-            }
-            calBody.innerHTML = html;
-        } catch(error) { calBody.innerHTML = `<div style="color:red; text-align:center;">Error loading calendar</div>`; }
+        let html = "";
+        for(let i = daysInMonth; i >= 1; i--) {
+            let dateStr = `${year}-${month}-${String(i).padStart(2, '0')}`;
+            let dLog = logs[dateStr] || {}, isP = isDatePaused(dateStr, stu);
+            
+            let formatMeal = (mCode, label) => {
+                if(dLog[mCode]) return dLog[mCode].isDue ? `due">⚠️ ${label}` : `yes">✔ ${label}`;
+                return isP ? `pause">⏸ ${label}` : `no">❌ ${label}`;
+            };
+
+            let b = formatMeal('breakfast', 'B'), l = formatMeal('lunch', 'L'), d = formatMeal('dinner', 'D');
+            let dateDisplay = new Date(dateStr).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+            html += `<div class="cal-row"><div class="cal-date">${dateDisplay}</div><div class="meal-dots"><div class="dot ${b}</div><div class="dot ${l}</div><div class="dot ${d}</div></div></div>`;
+        }
+        calBody.innerHTML = html;
     }
 </script>
 </body>
