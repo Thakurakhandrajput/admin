@@ -8,13 +8,19 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
+        /* ================= PREMIUM BASE STYLES ================= */
         :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --danger: #FF3B30; }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; -webkit-tap-highlight-color: transparent; }
+        
         body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 40px; }
 
+        /* 🔥 SCROLL LOCK CLASS */
+        body.modal-open { overflow: hidden; overscroll-behavior-y: none; }
+
+        /* ================= HEADER & PROFILE INFO ================= */
         .header { background: var(--card-bg); padding: 50px 20px 30px 20px; text-align: center; border-radius: 0 0 30px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); position: relative; }
-        .btn-back { position: absolute; top: 20px; left: 20px; font-size: 24px; font-weight: bold; cursor: pointer; text-decoration: none; color: var(--text-main); }
-        .btn-edit { position: absolute; top: 20px; right: 20px; font-size: 22px; cursor: pointer; background: var(--bg-color); padding: 8px; border-radius: 50%; }
+        .btn-back { position: absolute; top: 20px; left: 20px; font-size: 24px; font-weight: bold; cursor: pointer; text-decoration: none; color: var(--text-main); padding: 5px;}
+        .btn-edit { position: absolute; top: 20px; right: 20px; font-size: 22px; cursor: pointer; background: var(--bg-color); padding: 8px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
         
         .profile-pic { width: 120px; height: 120px; border-radius: 35px; object-fit: cover; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 4px solid #fff; }
         .profile-name { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
@@ -27,6 +33,7 @@
         .btn-pause { background: var(--primary); color: #fff; border: none; padding: 16px 20px; border-radius: 16px; font-weight: 700; cursor: pointer; width: 100%; font-size: 16px; box-shadow: 0 8px 20px rgba(0,122,255,0.25); transition: 0.2s;}
         .btn-pause:active { transform: scale(0.97); }
 
+        /* ================= CALENDAR ================= */
         .calendar-card { background: var(--card-bg); margin: 20px; border-radius: 24px; padding: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.03); }
         .cal-title { font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main); }
         .cal-row { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
@@ -38,14 +45,23 @@
         .dot.pause { background: rgba(0, 122, 255, 0.15); color: var(--primary); } 
         .dot.due { background: rgba(255, 152, 0, 0.15); color: #ff9800; }
 
-        /* EDIT POPUP (BOTTOM SHEET STYLE) */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
-        .modal-box { background: var(--card-bg); width: 100%; border-radius: 30px 30px 0 0; padding: 30px 25px 40px 25px; position: relative; max-height: 90vh; overflow-y: auto; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        /* ================= PREMIUM EDIT POPUP (BOTTOM SHEET) ================= */
+        .bottom-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(3px);}
+        .bottom-sheet-overlay.active { opacity: 1; visibility: visible; }
         
-        .drag-handle { width: 40px; height: 5px; background: #e5e5ea; border-radius: 5px; margin: 0 auto 20px auto; }
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 0px 0px 20px 0px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; max-height: 90vh; display: flex; flex-direction: column;}
+        .bottom-sheet-overlay.active .bottom-sheet { transform: translateY(0); }
+        
+        .sheet-header { padding: 15px 25px 15px 25px; background: var(--card-bg); border-radius: 30px 30px 0 0; position: sticky; top: 0; z-index: 10; touch-action: none; border-bottom: 1px solid rgba(0,0,0,0.05);}
+        .drag-handle-area { width: 100%; height: 20px; display: flex; justify-content: center; align-items: flex-start; cursor: grab; padding-top: 5px; margin-bottom: 5px;}
+        .drag-handle { width: 45px; height: 5px; background: #d1d1d6; border-radius: 5px; }
+        .sheet-title { font-size: 20px; font-weight: 800; text-align: center; color: var(--text-main); margin: 0; }
+        
+        .sheet-content { padding: 15px 25px; overflow-y: auto; flex-grow: 1; overscroll-behavior: contain; }
+
+        /* FORM INPUTS */
         .input-group { margin-bottom: 18px; }
-        .input-group label { display: block; font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;}
         .input-group input, .input-group select { width: 100%; background: var(--bg-color); border: 2px solid transparent; padding: 16px; border-radius: 14px; font-size: 16px; outline: none; font-weight: 600; color: var(--text-main); transition: 0.2s; }
         .input-group input:focus, .input-group select:focus { border-color: var(--primary); background: #fff; }
         
@@ -82,53 +98,49 @@
         </div>
     </div>
 
-    <!-- EDIT POPUP (Bottom Sheet) -->
-    <div id="edit-popup" class="modal-overlay">
-        <div class="modal-box">
-            <div class="drag-handle" onclick="closeEditPopup()"></div>
-            <h3 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 800;">Edit Profile</h3>
+    <!-- PREMIUM EDIT POPUP (Bottom Sheet) -->
+    <div id="edit-sheet" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'edit-sheet')">
+        <div class="bottom-sheet" id="edit-sheet-content">
+            <div class="sheet-header" id="edit-header">
+                <div class="drag-handle-area"><div class="drag-handle"></div></div>
+                <div class="sheet-title">Edit Profile</div>
+            </div>
             
-            <div class="input-group"><label>Full Name</label><input type="text" id="edit-name"></div>
-            <div class="input-group"><label>Room Number</label><input type="text" id="edit-room"></div>
-            
-            <div class="input-group">
-                <label>Update Photo</label>
-                <div class="upload-btn">
-                    <span id="edit-file-name">📸 Tap to Change Photo</span>
-                    <input type="file" id="edit-photo" accept="image/*" capture="environment" onchange="previewFile('edit-photo', 'edit-file-name')">
+            <div class="sheet-content">
+                <div class="input-group"><label>Full Name</label><input type="text" id="edit-name"></div>
+                <div class="input-group"><label>Room Number</label><input type="text" id="edit-room"></div>
+                
+                <div class="input-group">
+                    <label>Update Photo</label>
+                    <div class="upload-btn">
+                        <span id="edit-file-name">📸 Tap to Change Photo</span>
+                        <input type="file" id="edit-photo" accept="image/*" capture="environment" onchange="previewFile('edit-photo', 'edit-file-name')">
+                    </div>
                 </div>
-            </div>
 
-            <div class="input-group"><label>Fee Valid Till</label><input type="date" id="edit-date"></div>
-            <div class="input-group">
-                <label>Account Status</label>
-                <select id="edit-status">
-                    <option value="active">🟢 Active</option>
-                    <option value="fee_due">🟠 Fee Due</option>
-                    <option value="paused">⏸️ Paused</option>
-                    <option value="banned">🔴 Banned</option>
-                </select>
+                <div class="input-group"><label>Fee Valid Till</label><input type="date" id="edit-date"></div>
+                <div class="input-group">
+                    <label>Account Status</label>
+                    <select id="edit-status">
+                        <option value="active">🟢 Active</option>
+                        <option value="fee_due">🟠 Fee Due</option>
+                        <option value="paused">⏸️ Paused</option>
+                        <option value="banned">🔴 Banned</option>
+                    </select>
+                </div>
+                
+                <button class="btn-main" onclick="updateProfile()">💾 Save Changes</button>
+                <button class="btn-main btn-danger" onclick="deleteStudent()">🗑️ Delete Student</button>
             </div>
-            
-            <button class="btn-main" onclick="updateProfile()">💾 Save Changes</button>
-            <button class="btn-main btn-danger" onclick="deleteStudent()">🗑️ Delete Student</button>
         </div>
     </div>
 
 <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE",
-      authDomain: "obc-mess-system.firebaseapp.com",
-      projectId: "obc-mess-system",
-      storageBucket: "obc-mess-system.firebasestorage.app",
-      messagingSenderId: "501219370424",
-      appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE", authDomain: "obc-mess-system.firebaseapp.com", projectId: "obc-mess-system", storageBucket: "obc-mess-system.firebasestorage.app", messagingSenderId: "501219370424", appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
 
-    // Get Student Code from URL (?code=101)
     const urlParams = new URLSearchParams(window.location.search);
     const currentCode = urlParams.get('code');
     let globalStudentData = null;
@@ -139,14 +151,14 @@
     }
 
     auth.onAuthStateChanged((user) => {
-        if (!user) window.location.href = "index.html"; // Protect route
+        if (!user) window.location.replace("login.html"); 
         else loadProfile();
     });
 
     function getDaysLeft(dateStr) {
         let today = new Date(); today.setHours(0,0,0,0);
         let target = new Date(dateStr);
-        return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        return Math.ceil((target - target.getTimezoneOffset()*60000 - today) / (1000 * 60 * 60 * 24));
     }
 
     function loadProfile() {
@@ -164,14 +176,21 @@
             let badge = document.getElementById("prof-days");
             let pBtn = document.getElementById("btn-pause");
             
+            // 🔥 EXACT EXPIRED DAYS FIX
             if(stu.status === 'banned') { 
                 badge.innerText = `BANNED`; badge.className = "badge-main expired"; pBtn.style.display="none";
             } else if(stu.status === 'paused') { 
                 badge.innerText = `PAUSED (On Leave)`; badge.className = "badge-main paused-badge"; 
                 pBtn.style.display="block"; pBtn.innerText="▶️ Resume Account"; pBtn.style.background="#34C759"; 
             } else { 
-                badge.innerText = days >= 0 ? `${days} Days Left` : `Expired`; 
-                badge.className = days >= 0 ? "badge-main" : "badge-main expired"; 
+                if(days >= 0) {
+                    badge.innerText = `${days} Days Left`; 
+                    badge.className = "badge-main";
+                } else {
+                    // Yahan batayega kitne din se expired hai
+                    badge.innerText = `Expired (Due: ${Math.abs(days)} Days)`; 
+                    badge.className = "badge-main expired";
+                }
                 pBtn.style.display="block"; pBtn.innerText="⏸️ Pause Account"; pBtn.style.background="var(--primary)"; 
             }
 
@@ -179,26 +198,20 @@
         });
     }
 
-    // 🔥 SMART PAUSE LOGIC (From Tomorrow)
+    // PAUSE LOGIC
     async function togglePause() {
         let stu = globalStudentData;
         let today = new Date();
         let todayStr = today.toISOString().split('T')[0];
 
         if(stu.status === 'paused') { 
-            // RESUME LOGIC
-            let pDate = new Date(stu.lastPauseDate); // The day pause started
-            let tDate = new Date(todayStr); // Today
-            
+            let pDate = new Date(stu.lastPauseDate); 
+            let tDate = new Date(todayStr); 
             let daysPaused = 0;
-            // Agar pDate kal ki thi, aur aaj hi resume kar raha hai, toh daysPaused 0 hoga (No extension)
-            if(tDate >= pDate) {
-                daysPaused = Math.floor((tDate - pDate)/(1000*60*60*24));
-            }
+            if(tDate >= pDate) { daysPaused = Math.floor((tDate - pDate)/(1000*60*60*24)); }
             
             let newExp = new Date(stu.feeValidTill); 
             newExp.setDate(newExp.getDate() + daysPaused);
-            
             let hist = stu.pauseHistory || []; 
             hist.push({start: stu.lastPauseDate, end: todayStr});
 
@@ -206,21 +219,16 @@
                 status: 'active', lastPauseDate: null, pauseHistory: hist, feeValidTill: newExp.toISOString().split('T')[0] 
             });
             alert(`✅ Resumed! Expiry extended by ${daysPaused} days.`);
-
         } else { 
-            // PAUSE LOGIC (Will start from Tomorrow)
             let tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1); // Add 1 day
+            tomorrow.setDate(tomorrow.getDate() + 1); 
             let tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-            await db.collection("students").doc(currentCode).update({ 
-                status: 'paused', lastPauseDate: tomorrowStr 
-            });
+            await db.collection("students").doc(currentCode).update({ status: 'paused', lastPauseDate: tomorrowStr });
             alert("⏸️ Account Paused! Please Note: Pause will apply from TOMORROW. Today's meals will be counted normally.");
         }
     }
 
-    // --- EDIT POPUP LOGIC WITH BACK BUTTON SUPPORT ---
+    // --- BOTTOM SHEET LOGIC ---
     function openEditPopup() {
         let stu = globalStudentData;
         document.getElementById("edit-name").value = stu.name; 
@@ -228,19 +236,63 @@
         document.getElementById("edit-date").value = stu.feeValidTill; 
         document.getElementById("edit-status").value = stu.status;
         
-        history.pushState({ modal: 'edit' }, "Edit Profile", "#edit");
-        document.getElementById("edit-popup").style.display = "flex";
+        history.pushState({ modal: 'edit-sheet' }, "Edit Profile", "#edit");
+        document.getElementById('edit-sheet').classList.add('active'); 
+        document.body.classList.add('modal-open'); // 🔥 Lock Background Scroll
     }
 
     function closeEditPopup() {
-        if(history.state && history.state.modal === 'edit') { history.back(); } 
-        else { document.getElementById("edit-popup").style.display = "none"; }
+        if(history.state && history.state.modal === 'edit-sheet') { history.back(); } 
+        else { 
+            document.getElementById('edit-sheet').classList.remove('active'); 
+            document.body.classList.remove('modal-open'); 
+        }
+    }
+
+    function closeSheetOutside(e, id) {
+        if(e.target.id === id) { closeEditPopup(); }
     }
 
     window.addEventListener('popstate', function(event) {
-        document.getElementById("edit-popup").style.display = "none";
+        document.getElementById('edit-sheet').classList.remove('active');
+        document.body.classList.remove('modal-open');
     });
 
+    // 🔥 SWIPE DOWN TO CLOSE
+    function setupSwipeToClose(sheetOverlayId, sheetContentId, headerId) {
+        const sheet = document.getElementById(sheetContentId);
+        const header = document.getElementById(headerId);
+        let startY = 0; let currentY = 0; let isDragging = false;
+
+        header.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            sheet.style.transition = 'none';
+        }, {passive: true});
+
+        header.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentY = e.touches[0].clientY;
+            let deltaY = currentY - startY;
+            if (deltaY > 0) { 
+                e.preventDefault(); // Stop pull-to-refresh
+                sheet.style.transform = `translateY(${deltaY}px)`; 
+            }
+        }, {passive: false});
+
+        header.addEventListener('touchend', (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)';
+            let deltaY = currentY - startY;
+            if (deltaY > 60) { closeEditPopup(); setTimeout(() => { sheet.style.transform = ''; }, 400); } 
+            else { sheet.style.transform = ''; }
+        });
+    }
+
+    setupSwipeToClose('edit-sheet', 'edit-sheet-content', 'edit-header');
+
+    // --- OTHER LOGIC ---
     function previewFile(inputId, displayId) {
         let file = document.getElementById(inputId).files[0];
         if(file) document.getElementById(displayId).innerText = "✅ " + file.name;
@@ -253,7 +305,9 @@
                 let img = new Image(); img.src = e.target.result;
                 img.onload = () => {
                     let cvs = document.createElement('canvas'); cvs.width = 200; cvs.height = 200;
-                    cvs.getContext('2d').drawImage(img, 0, 0, 200, 200);
+                    let minSize = Math.min(img.width, img.height);
+                    let sx = (img.width - minSize) / 2, sy = (img.height - minSize) / 2;
+                    cvs.getContext('2d').drawImage(img, sx, sy, minSize, minSize, 0, 0, 200, 200);
                     resolve(cvs.toDataURL('image/jpeg', 0.6));
                 };
             };
@@ -279,12 +333,9 @@
 
     function isDatePaused(dateStr, stu) {
         let d = new Date(dateStr);
-        // Compare with lastPauseDate (which is tomorrow's date if paused today)
         if(stu.lastPauseDate && d >= new Date(stu.lastPauseDate)) return true;
         if(stu.pauseHistory) { 
-            for(let h of stu.pauseHistory) { 
-                if(d >= new Date(h.start) && d < new Date(h.end)) return true; 
-            } 
+            for(let h of stu.pauseHistory) { if(d >= new Date(h.start) && d < new Date(h.end)) return true; } 
         }
         return false;
     }
