@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBC Mess - Settings</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script>
+        // Check Auth immediately to prevent flashing
+        const firebaseConfig = { apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE", authDomain: "obc-mess-system.firebaseapp.com", projectId: "obc-mess-system", storageBucket: "obc-mess-system.firebasestorage.app", messagingSenderId: "501219370424", appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d" };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        firebase.auth().onAuthStateChanged((user) => { if (!user) window.location.href = "index.html"; else document.getElementById('admin-email-display').innerText = user.email; });
+    </script>
+    <style>
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --danger: #FF3B30; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; }
+
+        .header { padding: 30px 20px 20px 20px; text-align: center; }
+        .header p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .header h1 { margin: 2px 0 0 0; font-size: 28px; font-weight: 800; color: var(--text-main); }
+
+        .form-card { background: var(--card-bg); margin: 0 20px; border-radius: 24px; padding: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.04); }
+        .setting-item { display: flex; align-items: center; justify-content: space-between; padding: 18px; border-bottom: 1px solid #e5e5ea; cursor: pointer; transition: 0.2s; border-radius: 14px;}
+        .setting-item:last-child { border-bottom: none; }
+        .setting-item:active { background: #f0f0f5; }
+        .setting-item span { font-size: 17px; font-weight: 600; color: var(--text-main); }
+        .setting-icon { background: rgba(0, 122, 255, 0.1); color: var(--primary); padding: 10px; border-radius: 12px; font-size: 18px; margin-right: 15px; display: inline-flex; justify-content: center; align-items: center; width: 42px; height: 42px;}
+        
+        /* BOTTOM NAV */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-around; padding: 15px 0 25px 0; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; }
+
+        /* PASSWORD MODAL (BOTTOM SHEET STYLE) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
+        .modal-box { background: var(--card-bg); width: 100%; border-radius: 30px 30px 0 0; padding: 30px 25px 40px 25px; position: relative; max-height: 90vh; overflow-y: auto; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .drag-handle { width: 40px; height: 5px; background: #e5e5ea; border-radius: 5px; margin: 0 auto 20px auto; }
+        .input-group { margin-bottom: 18px; }
+        .input-group label { display: block; font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+        .input-group input { width: 100%; background: var(--bg-color); border: 2px solid transparent; padding: 16px; border-radius: 14px; font-size: 16px; outline: none; font-weight: 600; color: var(--text-main); transition: 0.2s; }
+        .input-group input:focus { border-color: var(--primary); background: #fff; }
+        
+        .btn-main { width: 100%; background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 10px; box-shadow: 0 8px 20px rgba(0,122,255,0.25);}
+        .btn-main:active { transform: scale(0.97); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <p>Preferences</p>
+        <h1>Settings</h1>
+    </div>
+
+    <div class="form-card">
+        <div class="setting-item" onclick="openPasswordModal()">
+            <div style="display:flex; align-items:center;">
+                <span class="setting-icon">🔒</span>
+                <span>Change Password</span>
+            </div>
+            <span style="color:#c7c7cc; font-weight: bold;">❯</span>
+        </div>
+        
+        <div class="setting-item" onclick="logoutFirebase()">
+            <div style="display:flex; align-items:center;">
+                <span class="setting-icon" style="color:var(--danger); background:rgba(255,59,48,0.1);">🚪</span>
+                <span style="color:var(--danger);">Logout Account</span>
+            </div>
+        </div>
+    </div>
+    
+    <div style="text-align:center; padding:30px 20px; color:var(--text-muted); font-size:13px; font-weight: 500;">
+        Currently logged in as: <br><b id="admin-email-display" style="color: var(--text-main); font-size: 15px; margin-top:5px; display:inline-block;">Loading...</b>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item"><div class="nav-icon">🏠</div><span>Home</span></a>
+        <a href="add.html" class="nav-item"><div class="nav-icon">➕</div><span>Add New</span></a>
+        <a href="setting.html" class="nav-item active"><div class="nav-icon">⚙️</div><span>Settings</span></a>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL (BOTTOM SHEET) -->
+    <div id="pass-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="drag-handle" onclick="closePasswordModal()"></div>
+            <h3 style="margin: 0 0 20px 0; font-size: 22px; font-weight: 800; text-align: center;">Update Password</h3>
+            
+            <div class="input-group">
+                <label>Current Password</label>
+                <input type="password" id="old-pass" placeholder="Enter Old Password">
+            </div>
+            <div class="input-group">
+                <label>New Password</label>
+                <input type="password" id="new-pass" placeholder="Minimum 6 characters">
+            </div>
+            
+            <button class="btn-main" id="btn-update-pass" onclick="updatePassword()">Save New Password</button>
+        </div>
+    </div>
+
+<script>
+    const auth = firebase.auth();
+
+    function logoutFirebase() {
+        if(confirm("Are you sure you want to log out?")) {
+            auth.signOut().then(() => {
+                window.location.href = "index.html";
+            });
+        }
+    }
+
+    // --- PASSWORD MODAL BACK BUTTON SUPPORT ---
+    function openPasswordModal() { 
+        history.pushState({ modal: 'password' }, "Change Password", "#password");
+        document.getElementById('pass-modal').style.display = 'flex'; 
+    }
+    
+    function closePasswordModal() { 
+        if(history.state && history.state.modal === 'password') { history.back(); } 
+        else { document.getElementById('pass-modal').style.display = 'none'; }
+    }
+
+    window.addEventListener('popstate', function(event) {
+        document.getElementById('pass-modal').style.display = 'none';
+    });
+
+    // --- UPDATE PASSWORD LOGIC ---
+    async function updatePassword() {
+        let oldPass = document.getElementById("old-pass").value;
+        let newPass = document.getElementById("new-pass").value;
+        let btn = document.getElementById("btn-update-pass");
+
+        if(!oldPass || !newPass) return alert("Please fill both password fields.");
+        if(newPass.length < 6) return alert("New password must be at least 6 characters.");
+
+        btn.innerText = "⏳ Verifying...";
+        
+        const user = auth.currentUser;
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPass);
+
+        try {
+            await user.reauthenticateWithCredential(credential);
+            await user.updatePassword(newPass);
+            alert("✅ Password Changed Successfully!");
+            closePasswordModal();
+            document.getElementById("old-pass").value = "";
+            document.getElementById("new-pass").value = "";
+        } catch(error) {
+            alert("❌ Failed: " + error.message);
+        } finally {
+            btn.innerText = "Save New Password";
+        }
+    }
+</script>
+</body>
+</html>
