@@ -14,9 +14,6 @@
         
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* 🔥 FIX FOR PULL-TO-REFRESH: Ye page ko refresh hone se rokega */
-        html, body { overscroll-behavior-y: none; }
-        
         body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; overflow-x: hidden; }
 
         /* ================= APP LOADER ================= */
@@ -78,25 +75,27 @@
         .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s;}
         .nav-item:active .nav-icon { transform: scale(0.8); }
 
-        /* ================= PREMIUM BOTTOM SHEETS (Swipeable) ================= */
+        /* ================= PREMIUM BOTTOM SHEETS ================= */
         .bottom-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(3px);}
         .bottom-sheet-overlay.active { opacity: 1; visibility: visible; }
         
-        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 20px 25px 40px 25px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; max-height: 85vh; overflow-y: auto; touch-action: none;} /* touch-action prevents scroll conflicts */
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 0px 0px 40px 0px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; max-height: 85vh; display: flex; flex-direction: column;}
         .bottom-sheet-overlay.active .bottom-sheet { transform: translateY(0); }
         
-        /* 🔥 Premium Hitbox Drag Handle */
-        .drag-handle-area { width: 100%; height: 30px; display: flex; justify-content: center; align-items: flex-start; cursor: grab; padding-top: 5px; margin-bottom: 10px;}
+        .sheet-header { padding: 20px 25px 15px 25px; border-bottom: 1px solid #f0f0f0; background: var(--card-bg); border-radius: 30px 30px 0 0; position: sticky; top: 0; z-index: 10; }
+        .drag-handle-area { width: 100%; height: 20px; display: flex; justify-content: center; align-items: flex-start; cursor: grab; padding-top: 5px; margin-bottom: 5px;}
         .drag-handle { width: 45px; height: 5px; background: #d1d1d6; border-radius: 5px; }
+        .sheet-title { font-size: 22px; font-weight: 800; text-align: center; color: var(--text-main); margin: 0; }
         
-        .sheet-title { font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--text-main); }
+        .sheet-content { padding: 20px 25px; overflow-y: auto; flex-grow: 1; }
+
         .meal-row { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 18px 20px; border-radius: 16px; margin-bottom: 12px; font-weight: 700; font-size: 16px; border: 1px solid #f0f0f0;}
         .meal-row span:last-child { color: var(--primary); font-size: 20px; font-weight: 800; background: rgba(0,122,255,0.1); padding: 5px 15px; border-radius: 10px;}
         
         /* Sort Options */
         .sort-group { margin-bottom: 20px; }
         .sort-group h4 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; font-weight: 700;}
-        .sort-option { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #f9f9f9; border-radius: 14px; margin-bottom: 8px; font-weight: 600; cursor: pointer; border: 2px solid transparent;}
+        .sort-option { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #f9f9f9; border-radius: 14px; margin-bottom: 8px; font-weight: 600; font-size: 15px; cursor: pointer; border: 2px solid transparent;}
         .sort-option.active { border-color: var(--primary); background: rgba(0,122,255,0.05); color: var(--primary);}
         .btn-sheet-close { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; }
     </style>
@@ -154,39 +153,46 @@
     </div>
 
     <!-- MEALS BOTTOM SHEET (Swipe to Close) -->
-    <div id="meals-sheet" class="bottom-sheet-overlay">
+    <div id="meals-sheet" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'meals-sheet')">
         <div class="bottom-sheet" id="meals-sheet-content">
-            <div class="drag-handle-area"><div class="drag-handle"></div></div>
-            <div class="sheet-title">🍽️ Today's Consumption</div>
-            <div class="meal-row"><span>🌅 Breakfast</span> <span id="md-b">0</span></div>
-            <div class="meal-row"><span>☀️ Lunch</span> <span id="md-l">0</span></div>
-            <div class="meal-row"><span>🌙 Dinner</span> <span id="md-d">0</span></div>
+            <div class="sheet-header" id="meals-header">
+                <div class="drag-handle-area"><div class="drag-handle"></div></div>
+                <div class="sheet-title">🍽️ Today's Consumption</div>
+            </div>
+            <div class="sheet-content">
+                <div class="meal-row"><span>🌅 Breakfast</span> <span id="md-b">0</span></div>
+                <div class="meal-row"><span>☀️ Lunch</span> <span id="md-l">0</span></div>
+                <div class="meal-row"><span>🌙 Dinner</span> <span id="md-d">0</span></div>
+            </div>
         </div>
     </div>
 
-    <!-- SORT BOTTOM SHEET (Swipe to Close) -->
-    <div id="sort-sheet" class="bottom-sheet-overlay">
+    <!-- SORT BOTTOM SHEET (Swipe to Close & Scrollable) -->
+    <div id="sort-sheet" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'sort-sheet')">
         <div class="bottom-sheet" id="sort-sheet-content">
-            <div class="drag-handle-area"><div class="drag-handle"></div></div>
-            <div class="sheet-title">Sort & Filter</div>
-            
-            <div class="sort-group">
-                <h4>Filter By Status</h4>
-                <div class="sort-option active" id="flt-all" onclick="updateFilter('all')">View All Students <span>✔</span></div>
-                <div class="sort-option" id="flt-active" onclick="updateFilter('active')">🟢 Active Only <span></span></div>
-                <div class="sort-option" id="flt-fee_due" onclick="updateFilter('fee_due')">🔴 Overdue Only <span></span></div>
-                <div class="sort-option" id="flt-paused" onclick="updateFilter('paused')">⏸️ Paused (Leave) <span></span></div>
+            <div class="sheet-header" id="sort-header">
+                <div class="drag-handle-area"><div class="drag-handle"></div></div>
+                <div class="sheet-title">Sort & Filter</div>
             </div>
+            <div class="sheet-content">
+                <div class="sort-group">
+                    <h4>Filter By Status</h4>
+                    <div class="sort-option active" id="flt-all" onclick="updateFilter('all')">View All Students <span>✔</span></div>
+                    <div class="sort-option" id="flt-active" onclick="updateFilter('active')">🟢 Active Only <span></span></div>
+                    <div class="sort-option" id="flt-fee_due" onclick="updateFilter('fee_due')">🔴 Overdue Only <span></span></div>
+                    <div class="sort-option" id="flt-paused" onclick="updateFilter('paused')">⏸️ Paused (Leave) <span></span></div>
+                </div>
 
-            <div class="sort-group">
-                <h4>Sort Order</h4>
-                <div class="sort-option active" id="srt-smart" onclick="updateSort('smart')">⚡ Smart (Due first, then by days) <span>✔</span></div>
-                <div class="sort-option" id="srt-days_asc" onclick="updateSort('days_asc')">⏳ Days Left: Low to High <span></span></div>
-                <div class="sort-option" id="srt-days_desc" onclick="updateSort('days_desc')">⏳ Days Left: High to Low <span></span></div>
-                <div class="sort-option" id="srt-az" onclick="updateSort('az')">🔤 Name: A to Z <span></span></div>
+                <div class="sort-group">
+                    <h4>Sort Order</h4>
+                    <div class="sort-option active" id="srt-smart" onclick="updateSort('smart')">⚡ Smart (Due first) <span>✔</span></div>
+                    <div class="sort-option" id="srt-days_asc" onclick="updateSort('days_asc')">⏳ Days Left: Low to High <span></span></div>
+                    <div class="sort-option" id="srt-days_desc" onclick="updateSort('days_desc')">⏳ Days Left: High to Low <span></span></div>
+                    <div class="sort-option" id="srt-az" onclick="updateSort('az')">🔤 Name: A to Z <span></span></div>
+                </div>
+
+                <button class="btn-sheet-close" onclick="closeSheet('sort-sheet')">Apply & Close</button>
             </div>
-
-            <button class="btn-sheet-close" onclick="closeSheet('sort-sheet')">Apply & Close</button>
         </div>
     </div>
 
@@ -290,7 +296,6 @@
         });
     }
 
-    // --- BOTTOM SHEET LOGIC ---
     function updateMealsBreakdown() {
         let b=0, l=0, d=0; todayAttendance.forEach(a => { let m = a.meal.toLowerCase(); if(m === 'breakfast') b++; else if(m === 'lunch') l++; else if(m === 'dinner') d++; });
         document.getElementById('md-b').innerText = b; document.getElementById('md-l').innerText = l; document.getElementById('md-d').innerText = d;
@@ -302,54 +307,47 @@
         else { document.getElementById(id).classList.remove('active'); }
         if(id === 'sort-sheet') applySortAndFilter();
     }
+    
+    function closeSheetOutside(e, id) {
+        if(e.target.id === id) { closeSheet(id); }
+    }
+
     window.addEventListener('popstate', function(event) {
         document.getElementById('meals-sheet').classList.remove('active');
         document.getElementById('sort-sheet').classList.remove('active');
     });
 
-    // 🔥 SWIPE DOWN TO CLOSE (TOUCH LOGIC)
-    function setupSwipeToClose(sheetOverlayId, sheetContentId) {
+    function setupSwipeToClose(sheetOverlayId, sheetContentId, headerId) {
         const overlay = document.getElementById(sheetOverlayId);
         const sheet = document.getElementById(sheetContentId);
+        const header = document.getElementById(headerId);
         let startY = 0; let currentY = 0; let isDragging = false;
 
-        sheet.addEventListener('touchstart', (e) => {
-            if (sheet.scrollTop === 0) { // Only swipe if at the top of scrollable content
-                startY = e.touches[0].clientY;
-                isDragging = true;
-                sheet.style.transition = 'none'; // Disable transition for 1:1 finger tracking
-            }
+        header.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+            isDragging = true;
+            sheet.style.transition = 'none';
         }, {passive: true});
 
-        sheet.addEventListener('touchmove', (e) => {
+        header.addEventListener('touchmove', (e) => {
             if (!isDragging) return;
             currentY = e.touches[0].clientY;
             let deltaY = currentY - startY;
-            if (deltaY > 0) { // Dragging Down
-                sheet.style.transform = `translateY(${deltaY}px)`;
-            } else {
-                sheet.style.transform = `translateY(0px)`;
-            }
+            if (deltaY > 0) { sheet.style.transform = `translateY(${deltaY}px)`; }
         }, {passive: true});
 
-        sheet.addEventListener('touchend', (e) => {
+        header.addEventListener('touchend', (e) => {
             if (!isDragging) return;
             isDragging = false;
-            sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)'; // Restore smooth transition
-            
+            sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)';
             let deltaY = currentY - startY;
-            if (deltaY > 100) { // If swiped down more than 100px -> Close
-                closeSheet(sheetOverlayId);
-                setTimeout(() => { sheet.style.transform = ''; }, 400); // Reset transform after animation
-            } else {
-                sheet.style.transform = ''; // Snap back up
-            }
+            if (deltaY > 80) { closeSheet(sheetOverlayId); setTimeout(() => { sheet.style.transform = ''; }, 400); } 
+            else { sheet.style.transform = ''; }
         });
     }
 
-    // Attach swipe logic to both bottom sheets
-    setupSwipeToClose('meals-sheet', 'meals-sheet-content');
-    setupSwipeToClose('sort-sheet', 'sort-sheet-content');
+    setupSwipeToClose('meals-sheet', 'meals-sheet-content', 'meals-header');
+    setupSwipeToClose('sort-sheet', 'sort-sheet-content', 'sort-header');
 </script>
 </body>
 </html>
