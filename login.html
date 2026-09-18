@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBC Mess - Admin Login</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <style>
+        /* ================= PREMIUM DARK THEME (Login Only) ================= */
+        :root {
+            --primary: #007AFF;
+            --bg-color: #0b0f19;
+            --card-bg: #1c1c1e;
+            --text-main: #ffffff;
+            --text-muted: #8e8e93;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-color); background-image: radial-gradient(circle at top, #1a233a 0%, #0b0f19 70%); color: var(--text-main); margin: 0; padding: 0; display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+
+        /* ================= LOGIN BOX ================= */
+        .login-container { width: 100%; display: flex; justify-content: center; align-items: center; padding: 20px; animation: slideUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .login-box { background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(20px); padding: 45px 30px; border-radius: 28px; box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05); text-align: center; width: 100%; max-width: 360px; border: 1px solid rgba(255,255,255,0.08); }
+        
+        .logo-circle { width: 70px; height: 70px; background: linear-gradient(135deg, #007AFF, #00C6FF); border-radius: 20px; margin: 0 auto 20px auto; display: flex; align-items: center; justify-content: center; font-size: 32px; box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3); color: #fff;}
+        
+        .login-box h2 { color: #fff; margin: 0 0 5px 0; font-weight: 800; font-size: 26px; letter-spacing: -0.5px;}
+        .login-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 30px; font-weight: 500;}
+
+        /* ================= INPUTS ================= */
+        .input-group { margin-bottom: 15px; position: relative; }
+        .login-box input { width: 100%; padding: 16px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: #fff; font-size: 16px; outline: none; transition: 0.3s; font-weight: 500;}
+        .login-box input:focus { border-color: var(--primary); background: rgba(0,0,0,0.4); box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1); }
+        .login-box input::placeholder { color: #666; }
+
+        /* ================= BUTTONS ================= */
+        .btn-login { width: 100%; background: linear-gradient(135deg, var(--primary), #0056b3); color: #fff; border: none; padding: 18px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 10px; box-shadow: 0 8px 20px rgba(0, 122, 255, 0.3); }
+        .btn-login:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(0, 122, 255, 0.2); }
+        .btn-login:disabled { background: #333; color: #888; box-shadow: none; transform: none; cursor: not-allowed; }
+
+        .forgot-link { display: inline-block; margin-top: 25px; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .forgot-link:active { color: #fff; }
+
+        /* ================= FORGOT PASSWORD MODAL ================= */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: flex-end; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-box { background: var(--card-bg); width: 100%; border-radius: 30px 30px 0 0; padding: 35px 25px 40px 25px; position: relative; animation: slideUpModal 0.3s ease-out; }
+        @keyframes slideUpModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .drag-handle { width: 40px; height: 5px; background: #333; border-radius: 5px; margin: 0 auto 20px auto; }
+        .modal-box h3 { margin: 0 0 10px 0; font-size: 22px; font-weight: 800; color: #fff; }
+        .modal-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5; }
+        
+        .btn-cancel { width: 100%; background: transparent; color: var(--text-muted); border: 2px solid #333; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: 0.2s;}
+        .btn-cancel:active { background: #333; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="login-box">
+            <div class="logo-circle">🛡️</div>
+            <h2>OBC Mess</h2>
+            <p>Admin Control Panel</p>
+            
+            <div class="input-group">
+                <input type="email" id="email" placeholder="Admin Email" autocomplete="email">
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Master Password" autocomplete="current-password">
+            </div>
+            
+            <button class="btn-login" id="btn-login" onclick="login()">Secure Login</button>
+            
+            <span class="forgot-link" onclick="openForgotModal()">Forgot your password?</span>
+        </div>
+    </div>
+
+    <!-- FORGOT PASSWORD MODAL (BOTTOM SHEET) -->
+    <div id="forgot-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="drag-handle" onclick="closeForgotModal()"></div>
+            <h3>Reset Password</h3>
+            <p>Enter your admin email address below. We'll send you a secure link to reset your password.</p>
+            
+            <input type="email" id="reset-email" placeholder="Enter your email" style="width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #333; background: #000; color: #fff; font-size: 16px; outline: none; margin-bottom: 15px;">
+            
+            <button class="btn-login" id="btn-reset" onclick="sendResetLink()">Send Reset Link</button>
+            <button class="btn-cancel" onclick="closeForgotModal()">Cancel</button>
+        </div>
+    </div>
+
+<script>
+    // --- 1. FIREBASE CONFIGURATION ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE",
+      authDomain: "obc-mess-system.firebaseapp.com",
+      projectId: "obc-mess-system",
+      storageBucket: "obc-mess-system.firebasestorage.app",
+      messagingSenderId: "501219370424",
+      appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // --- 2. AUTO-REDIRECT IF ALREADY LOGGED IN ---
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            // Already logged in! Redirecting to dashboard silently.
+            window.location.replace("index.html"); 
+        }
+    });
+
+    // --- 3. LOGIN LOGIC ---
+    function login() {
+        let email = document.getElementById("email").value.trim();
+        let pass = document.getElementById("password").value;
+        let btn = document.getElementById("btn-login");
+
+        if(!email || !pass) {
+            alert("⚠️ Please enter both Email and Password.");
+            return;
+        }
+
+        // Show loading state
+        btn.innerText = "Authenticating...";
+        btn.disabled = true;
+
+        auth.signInWithEmailAndPassword(email, pass)
+            .then((userCredential) => {
+                // Success! The onAuthStateChanged listener will automatically redirect.
+                btn.innerText = "Success! Redirecting...";
+            })
+            .catch((error) => {
+                // Reset button and show error
+                btn.innerText = "Secure Login";
+                btn.disabled = false;
+                
+                let errorMsg = "Login Failed!";
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                    errorMsg = "❌ Incorrect Email or Password!";
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMsg = "❌ Invalid Email format!";
+                } else {
+                    errorMsg = error.message;
+                }
+                alert(errorMsg);
+            });
+    }
+
+    // Allow pressing "Enter" key to login
+    document.getElementById("password").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") { event.preventDefault(); login(); }
+    });
+
+    // --- 4. FORGOT PASSWORD LOGIC ---
+    function openForgotModal() {
+        // Copy email from login box to reset box if user already typed it
+        let currentEmail = document.getElementById("email").value;
+        if(currentEmail) document.getElementById("reset-email").value = currentEmail;
+        
+        document.getElementById('forgot-modal').style.display = 'flex';
+    }
+
+    function closeForgotModal() {
+        document.getElementById('forgot-modal').style.display = 'none';
+    }
+
+    function sendResetLink() {
+        let email = document.getElementById("reset-email").value.trim();
+        let btn = document.getElementById("btn-reset");
+
+        if(!email) {
+            alert("⚠️ Please enter your email address first.");
+            return;
+        }
+
+        btn.innerText = "Sending...";
+        btn.disabled = true;
+
+        auth.sendPasswordResetEmail(email)
+            .then(() => {
+                alert("📩 Success! Password reset link sent to: " + email + "\nPlease check your inbox and spam folder.");
+                closeForgotModal();
+                btn.innerText = "Send Reset Link";
+                btn.disabled = false;
+            })
+            .catch((error) => {
+                alert("❌ Error: " + error.message);
+                btn.innerText = "Send Reset Link";
+                btn.disabled = false;
+            });
+    }
+</script>
+</body>
+</html>
