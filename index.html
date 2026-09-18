@@ -3,67 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OBC Mess - Admin ERP</title>
+    <title>OBC Mess - Admin Dashboard</title>
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-tap-highlight-color: transparent; }
+        /* APP BASE STYLES (PREMIUM LIGHT THEME) */
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: #F2F4F7; color: #1c1c1e; margin: 0; padding: 0; padding-bottom: 80px; overflow-x: hidden; }
         
+        /* LOGIN OVERLAY */
         #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0f19; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .login-box { background: #1a1e24; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: center; width: 90%; max-width: 350px; }
         .login-box h2 { color: #fff; margin: 0 0 10px 0; }
         .login-box p { color: #8e8e93; font-size: 12px; margin-bottom: 20px; }
         .login-box input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #2d3748; background: #0b0f19; color: #fff; margin-bottom: 15px; font-size: 16px; outline: none; }
-        .login-box button { width: 100%; background: #007AFF; color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .login-box button { width: 100%; background: #007AFF; color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
         
         #main-app { display: none; }
-        .header { padding: 30px 20px 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { margin: 2px 0 0 0; font-size: 24px; font-weight: 800; color: #000; }
-        .admin-avatar { width: 45px; height: 45px; border-radius: 50%; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; }
 
+        /* HEADER */
+        .header { padding: 30px 20px 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header p { margin: 0; font-size: 11px; color: #8e8e93; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .header h1 { margin: 2px 0 0 0; font-size: 24px; font-weight: 800; color: #000; }
+        .admin-avatar { width: 45px; height: 45px; border-radius: 50%; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+
+        /* STATS GRID */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-bottom: 25px; }
         .stat-card { padding: 20px; border-radius: 20px; color: #fff; box-shadow: 0 8px 15px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
         .stat-card:active { transform: scale(0.95); }
         .stat-card h3 { margin: 0; font-size: 14px; font-weight: 600; opacity: 0.9; }
         .stat-card h2 { margin: 5px 0 0 0; font-size: 32px; font-weight: 800; }
+        .stat-card p { margin: 5px 0 0 0; font-size: 11px; font-weight: 600; opacity: 0.8; }
         .bg-green { background: linear-gradient(135deg, #34C759, #28a745); }
         .bg-red { background: linear-gradient(135deg, #FF3B30, #dc3545); }
         .bg-yellow { background: linear-gradient(135deg, #FFCC00, #ffb300); color: #000; }
         .bg-blue { background: linear-gradient(135deg, #007AFF, #0056b3); }
 
+        /* LIST CONTAINER */
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-bottom: 15px; }
+        .section-header h4 { margin: 0; font-size: 12px; color: #8e8e93; font-weight: 700; text-transform: uppercase; }
         .list-container { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
-        .list-item { background: #fff; border-radius: 16px; padding: 15px; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.04); cursor: pointer; }
+        .list-item { background: #fff; border-radius: 16px; padding: 15px; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.04); cursor: pointer; transition: 0.2s; }
+        .list-item:active { transform: scale(0.98); }
         .list-avatar { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; margin-right: 15px; }
         .list-info { flex: 1; }
         .list-info h4 { margin: 0; font-size: 16px; font-weight: 700; }
         .list-info p { margin: 2px 0 0 0; font-size: 12px; color: #8e8e93; }
+        
+        /* BADGES */
         .badge { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
         .text-green { color: #34C759; background: rgba(52, 199, 89, 0.1); }
         .text-red { color: #FF3B30; background: rgba(255, 59, 48, 0.1); }
         .text-gray { color: #8e8e93; background: rgba(142, 142, 147, 0.1); }
-        .text-blue { color: #007AFF; background: rgba(0, 122, 255, 0.1); } /* Paused Badge */
+        .text-blue { color: #007AFF; background: rgba(0, 122, 255, 0.1); }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #e5e5ea; display: flex; justify-content: space-around; padding: 15px 0 25px 0; z-index: 100; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 10px; font-weight: 600; cursor: pointer; }
+        /* BOTTOM NAV (Links to other files) */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #e5e5ea; display: flex; justify-content: space-around; padding: 15px 0 25px 0; z-index: 100; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 10px; font-weight: 600; cursor: pointer; text-decoration: none; }
         .nav-item.active { color: #007AFF; }
         .nav-icon { font-size: 22px; margin-bottom: 4px; }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .form-card { background: #fff; margin: 0 20px; border-radius: 20px; padding: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        .input-group { margin-bottom: 15px; }
-        .input-group label { display: block; font-size: 11px; color: #8e8e93; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
-        .input-group input, .input-group select { width: 100%; background: #F2F4F7; border: 1px solid #e5e5ea; padding: 14px; border-radius: 12px; font-size: 15px; outline: none; }
-        .upload-btn { background: rgba(0, 122, 255, 0.1); border: 2px dashed #007AFF; padding: 15px; border-radius: 12px; text-align: center; color: #007AFF; font-weight: 700; position: relative; }
-        .upload-btn input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
-        .btn-main { width: 100%; background: #000; color: #fff; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; transition: 0.2s;}
-        
+        /* MODALS (Profile & Edit) */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 300; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
-        .modal-box { background: #fff; width: 100%; max-width: 360px; border-radius: 20px; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto;}
+        .modal-box { background: #fff; width: 100%; max-width: 360px; border-radius: 20px; padding: 25px; position: relative; animation: popIn 0.3s ease; max-height: 90vh; overflow-y: auto;}
+        @keyframes popIn { from{ transform: scale(0.9); opacity:0;} to{ transform: scale(1); opacity:1;} }
         .btn-close-modal { position: absolute; top: 15px; right: 15px; font-size: 18px; font-weight: bold; background: none; border: none; cursor: pointer; }
 
         #profile-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #F2F4F7; z-index: 200; transform: translateY(100%); transition: transform 0.4s ease; overflow-y: auto; padding-bottom: 40px; }
@@ -71,30 +76,44 @@
         .profile-header { background: #fff; padding: 40px 20px 20px 20px; text-align: center; border-radius: 0 0 30px 30px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
         .btn-back { position: absolute; top: 20px; left: 20px; font-size: 24px; font-weight: bold; cursor: pointer; }
         .btn-edit { position: absolute; top: 20px; right: 20px; font-size: 22px; cursor: pointer; background: #F2F4F7; padding: 8px; border-radius: 50%; }
-        .profile-pic { width: 110px; height: 110px; border-radius: 30px; object-fit: cover; margin-bottom: 10px; }
-        .days-left-badge { display: inline-block; padding: 8px 20px; background: #000; color: #fff; border-radius: 20px; font-weight: 700; font-size: 14px; margin-bottom: 10px;}
+        .profile-pic { width: 110px; height: 110px; border-radius: 30px; object-fit: cover; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .profile-header h2 { margin: 0; font-size: 22px; font-weight: 800; }
+        .profile-header p { margin: 5px 0 15px 0; color: #8e8e93; font-size: 14px; font-weight: 600; }
+        
+        .days-left-badge { display: inline-block; padding: 8px 20px; background: #000; color: #fff; border-radius: 20px; font-weight: 700; font-size: 14px; margin-bottom: 15px;}
         .expired { background: #FF3B30; } .paused-badge { background: #007AFF; }
         
-        .btn-pause { background: #007AFF; color: #fff; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; margin-bottom: 10px; width: 100%; font-size: 16px;}
+        .btn-pause { background: #007AFF; color: #fff; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; width: 100%; font-size: 16px; box-shadow: 0 5px 15px rgba(0,122,255,0.3);}
 
-        .calendar-card { background: #fff; margin: 20px; border-radius: 20px; padding: 20px; }
+        .calendar-card { background: #fff; margin: 20px; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .cal-title { font-size: 14px; font-weight: 700; margin-bottom: 15px; }
         .cal-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
         .cal-date { font-weight: 700; font-size: 13px; width: 60px; }
         .meal-dots { display: flex; gap: 8px; }
         .dot { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; }
         .dot.yes { background: rgba(52, 199, 89, 0.15); color: #28a745; }
         .dot.no { background: rgba(255, 59, 48, 0.1); color: #FF3B30; }
-        .dot.pause { background: rgba(0, 122, 255, 0.15); color: #007AFF; } /* Blue Pause */
-        .dot.due { background: rgba(255, 152, 0, 0.15); color: #ff9800; } /* Yellow Due Entry */
+        .dot.pause { background: rgba(0, 122, 255, 0.15); color: #007AFF; } 
+        .dot.due { background: rgba(255, 152, 0, 0.15); color: #ff9800; }
+
+        /* INPUTS & BUTTONS */
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 11px; color: #8e8e93; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
+        .input-group input, .input-group select { width: 100%; background: #F2F4F7; border: 1px solid #e5e5ea; padding: 14px; border-radius: 12px; font-size: 15px; outline: none; }
+        .btn-main { width: 100%; background: #007AFF; color: #fff; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; transition: 0.2s;}
+        .btn-main:active { transform: scale(0.97); }
+        .btn-danger { background: transparent; color: #FF3B30; border: 2px solid #FF3B30; }
 
         .breakdown-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #eee;}
     </style>
 </head>
 <body>
 
+    <!-- SECURE FIREBASE LOGIN -->
     <div id="login-overlay">
         <div class="login-box">
             <h2>Admin Login</h2>
+            <p>Enter Master Credentials</p>
             <input type="email" id="admin-email" placeholder="Email Address">
             <input type="password" id="admin-pass" placeholder="Password">
             <button onclick="loginWithFirebase()">Secure Login</button>
@@ -102,66 +121,44 @@
     </div>
 
     <div id="main-app">
-        <!-- HOME TAB -->
-        <div id="tab-home" class="tab-content active">
-            <div class="header">
-                <div><p>Welcome Back</p><h1>Admin Panel</h1></div>
-                <div class="admin-avatar">A</div>
-            </div>
-
-            <!-- Clickable Stats -->
-            <div class="stats-grid">
-                <div class="stat-card bg-green" onclick="filterByStatus('active')"><h3>Active</h3><h2 id="stat-active">0</h2><p>Click to view</p></div>
-                <div class="stat-card bg-red" onclick="filterByStatus('fee_due')"><h3>Overdue</h3><h2 id="stat-due">0</h2><p>Click to view</p></div>
-                <div class="stat-card bg-yellow" onclick="filterByStatus('all')"><h3>Total List</h3><h2 id="stat-total">0</h2><p>Registered</p></div>
-                <div class="stat-card bg-blue" onclick="showMealsModal()"><h3>Meals</h3><h2 id="stat-meals">0</h2><p>Click details</p></div>
-            </div>
-
-            <div class="section-header"><h4>Students Directory</h4></div>
-            <div style="padding: 0 20px; margin-bottom: 15px;">
-                <input type="text" id="search-box" placeholder="🔍 Search Name or Code..." onkeyup="filterList()" style="width:100%; padding: 12px; border-radius: 12px; border:none; background:#e5e5ea; outline:none; font-weight:500;">
-            </div>
-            <div class="list-container" id="student-list"></div>
+        <!-- HEADER -->
+        <div class="header">
+            <div><p>Welcome Back</p><h1>Admin Panel</h1></div>
+            <div class="admin-avatar">A</div>
         </div>
 
-        <!-- ADD STUDENT TAB -->
-        <div id="tab-add" class="tab-content">
-            <div class="header"><div><p>Registration</p><h1>Add Student</h1></div></div>
-            <div class="form-card">
-                <div class="input-group">
-                    <label>Upload Photo</label>
-                    <div class="upload-btn">
-                        <span id="file-name">📸 Tap to Open Camera</span>
-                        <input type="file" id="stu-photo" accept="image/*" capture="environment" onchange="previewFile('stu-photo', 'file-name')">
-                    </div>
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div class="input-group"><label>Code</label><input type="text" id="stu-code" required></div>
-                    <div class="input-group"><label>Room</label><input type="text" id="stu-room" required></div>
-                </div>
-                <div class="input-group"><label>Full Name</label><input type="text" id="stu-name" required></div>
-                
-                <!-- New Payment Fields -->
-                <div class="input-group"><label>Start Date (From)</label><input type="date" id="stu-start"></div>
-                <div class="input-group"><label>Fee Valid Till (To)</label><input type="date" id="stu-date" required></div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div class="input-group">
-                        <label>Pay Mode</label>
-                        <select id="stu-pay-mode"><option>Cash</option><option>Online</option></select>
-                    </div>
-                    <div class="input-group"><label>Amount (₹)</label><input type="number" id="stu-amount" placeholder="e.g. 2500"></div>
-                </div>
-                
-                <button class="btn-main" id="btn-save" onclick="saveStudent()">💾 Save Record</button>
+        <!-- STATS GRID -->
+        <div class="stats-grid">
+            <div class="stat-card bg-green" onclick="filterByStatus('active')">
+                <h3>Active</h3><h2 id="stat-active">0</h2><p>Click to view</p>
+            </div>
+            <div class="stat-card bg-red" onclick="filterByStatus('fee_due')">
+                <h3>Overdue</h3><h2 id="stat-due">0</h2><p>Click to view</p>
+            </div>
+            <div class="stat-card bg-yellow" onclick="filterByStatus('all')">
+                <h3>Total List</h3><h2 id="stat-total">0</h2><p>Registered</p>
+            </div>
+            <div class="stat-card bg-blue" onclick="showMealsModal()">
+                <h3>Meals</h3><h2 id="stat-meals">0</h2><p>Served Today</p>
             </div>
         </div>
 
+        <div class="section-header"><h4>Students Directory</h4></div>
+        <div style="padding: 0 20px; margin-bottom: 15px;">
+            <input type="text" id="search-box" placeholder="🔍 Search Name or Code..." onkeyup="filterList()" style="width:100%; padding: 12px; border-radius: 12px; border:none; background:#e5e5ea; outline:none; font-weight:500;">
+        </div>
+        
+        <!-- STUDENT LIST -->
+        <div class="list-container" id="student-list"></div>
+
+        <!-- BOTTOM NAV (Links to other HTML files) -->
         <div class="bottom-nav">
-            <div class="nav-item active" onclick="switchTab('tab-home', this)"><div class="nav-icon">🏠</div><span>Home</span></div>
-            <div class="nav-item" onclick="switchTab('tab-add', this)"><div class="nav-icon">➕</div><span>Add New</span></div>
+            <a href="index.html" class="nav-item active"><div class="nav-icon">🏠</div><span>Home</span></a>
+            <a href="add.html" class="nav-item"><div class="nav-icon">➕</div><span>Add New</span></a>
+            <a href="setting.html" class="nav-item"><div class="nav-icon">⚙️</div><span>Settings</span></a>
         </div>
 
-        <!-- PROFILE VIEW -->
+        <!-- PROFILE VIEW MODAL -->
         <div id="profile-modal">
             <div class="profile-header">
                 <div class="btn-back" onclick="closeProfile()">❮</div>
@@ -170,8 +167,6 @@
                 <h2 id="prof-name">Name</h2>
                 <p id="prof-room">Room: - | Code: -</p>
                 <div id="prof-days" class="days-left-badge">Loading...</div>
-                
-                <!-- PAUSE BUTTON -->
                 <div style="padding: 0 20px;">
                     <button id="btn-pause" class="btn-pause" onclick="togglePause()">⏸️ Pause Account</button>
                 </div>
@@ -182,12 +177,13 @@
             </div>
         </div>
 
-        <!-- EDIT POPUP -->
+        <!-- EDIT POPUP MODAL -->
         <div id="edit-popup" class="modal-overlay">
             <div class="modal-box">
                 <button class="btn-close-modal" onclick="closeEditPopup()">✖</button>
                 <h3 style="margin-top:0;">✏️ Edit Details</h3>
                 <div class="input-group"><label>Name</label><input type="text" id="edit-name"></div>
+                <div class="input-group"><label>Room</label><input type="text" id="edit-room"></div>
                 <div class="input-group"><label>Fee Valid Till</label><input type="date" id="edit-date"></div>
                 <div class="input-group">
                     <label>Account Status</label>
@@ -198,7 +194,8 @@
                         <option value="banned">🔴 Banned</option>
                     </select>
                 </div>
-                <button class="btn-main" style="background:#007AFF;" onclick="updateProfile()">💾 Save Changes</button>
+                <button class="btn-main" onclick="updateProfile()">💾 Save Changes</button>
+                <button class="btn-main btn-danger" onclick="deleteStudent()">🗑️ Delete Student</button>
             </div>
         </div>
 
@@ -206,10 +203,10 @@
         <div id="meals-modal" class="modal-overlay">
             <div class="modal-box">
                 <button class="btn-close-modal" onclick="document.getElementById('meals-modal').style.display='none'">✖</button>
-                <h3 style="margin-top:0;">🍽️ Today's Meals</h3>
-                <div class="breakdown-row"><span>Breakfast:</span> <span id="md-b">0</span></div>
-                <div class="breakdown-row"><span>Lunch:</span> <span id="md-l">0</span></div>
-                <div class="breakdown-row" style="border:none;"><span>Dinner:</span> <span id="md-d">0</span></div>
+                <h3 style="margin-top:0; margin-bottom:20px;">🍽️ Today's Meals</h3>
+                <div class="breakdown-row"><span>Breakfast:</span> <span id="md-b" style="color:#007AFF;">0</span></div>
+                <div class="breakdown-row"><span>Lunch:</span> <span id="md-l" style="color:#007AFF;">0</span></div>
+                <div class="breakdown-row" style="border:none;"><span>Dinner:</span> <span id="md-d" style="color:#007AFF;">0</span></div>
             </div>
         </div>
 
@@ -231,14 +228,12 @@
     let allStudents = [];
     let todayAttendance = [];
     let currentActiveCode = "";
-    let currentActivePhoto = ""; 
 
+    // AUTH LOGIC
     auth.onAuthStateChanged((user) => {
         if (user) {
             document.getElementById("login-overlay").style.display = "none";
             document.getElementById("main-app").style.display = "block";
-            // Default Start Date setup
-            document.getElementById("stu-start").value = new Date().toISOString().split('T')[0];
             startDatabaseSync(); 
         } else {
             document.getElementById("main-app").style.display = "none";
@@ -248,15 +243,18 @@
 
     function loginWithFirebase() {
         let e = document.getElementById("admin-email").value, p = document.getElementById("admin-pass").value;
+        if(!e || !p) return alert("Email & Password required!");
         auth.signInWithEmailAndPassword(e, p).catch(err => alert("❌ Login Failed!"));
     }
 
+    // HELPER FUNCTIONS
     function getDaysLeft(dateStr) {
         let today = new Date(); today.setHours(0,0,0,0);
         let target = new Date(dateStr);
         return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
     }
 
+    // LOAD DATA
     function startDatabaseSync() {
         db.collection("students").onSnapshot((snap) => {
             allStudents = [];
@@ -287,29 +285,11 @@
         });
     }
 
-    function switchTab(tabId, el) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
-    }
-
+    // FILTER & RENDER
     function filterByStatus(status) {
         document.getElementById('search-box').value = "";
         if(status === 'all') renderList(allStudents);
         else renderList(allStudents.filter(s => s.status === status));
-    }
-
-    function showMealsModal() {
-        let b=0, l=0, d=0;
-        todayAttendance.forEach(a => {
-            let m = a.meal.toLowerCase();
-            if(m === 'breakfast') b++; else if(m === 'lunch') l++; else if(m === 'dinner') d++;
-        });
-        document.getElementById('md-b').innerText = b;
-        document.getElementById('md-l').innerText = l;
-        document.getElementById('md-d').innerText = d;
-        document.getElementById('meals-modal').style.display = 'flex';
     }
 
     function renderList(list) {
@@ -334,39 +314,22 @@
         renderList(allStudents.filter(s => s.name.toLowerCase().includes(q) || s.code.includes(q)));
     }
 
-    function previewFile(inputId, displayId) {
-        let file = document.getElementById(inputId).files[0];
-        if(file) document.getElementById(displayId).innerText = "✅ " + file.name;
-    }
-
-    function compressImage(file) {
-        return new Promise((resolve) => {
-            let reader = new FileReader(); reader.readAsDataURL(file);
-            reader.onload = e => {
-                let img = new Image(); img.src = e.target.result;
-                img.onload = () => {
-                    let cvs = document.createElement('canvas'); cvs.width = 200; cvs.height = 200;
-                    cvs.getContext('2d').drawImage(img, 0, 0, 200, 200);
-                    resolve(cvs.toDataURL('image/jpeg', 0.6));
-                };
-            };
+    function showMealsModal() {
+        let b=0, l=0, d=0;
+        todayAttendance.forEach(a => {
+            let m = a.meal.toLowerCase();
+            if(m === 'breakfast') b++; else if(m === 'lunch') l++; else if(m === 'dinner') d++;
         });
+        document.getElementById('md-b').innerText = b; document.getElementById('md-l').innerText = l; document.getElementById('md-d').innerText = d;
+        document.getElementById('meals-modal').style.display = 'flex';
     }
 
-    async function saveStudent() {
-        let code = document.getElementById("stu-code").value, name = document.getElementById("stu-name").value, room = document.getElementById("stu-room").value, dateTo = document.getElementById("stu-date").value, dateFrom = document.getElementById("stu-start").value, mode = document.getElementById("stu-pay-mode").value, amt = document.getElementById("stu-amount").value, file = document.getElementById("stu-photo").files[0];
-        if(!code || !name || !dateTo) return alert("Code, Name, Date required!");
-        document.getElementById("btn-save").innerText = "⏳ Saving...";
-        let photoUrl = file ? await compressImage(file) : `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
-        
-        await db.collection("students").doc(code).set({ code, name, room, startDate: dateFrom, feeValidTill: dateTo, paymentMode: mode, paymentAmount: amt, photo: photoUrl, status: "active", pauseHistory: [] });
-        alert("✅ Student Added!");
-        document.getElementById("btn-save").innerText = "💾 Save Record";
-    }
-
-    async function openProfile(code) {
-        currentActiveCode = code; let stu = allStudents.find(s => s.code === code); currentActivePhoto = stu.photo; 
-        document.getElementById("prof-img").src = stu.photo; document.getElementById("prof-name").innerText = stu.name; document.getElementById("prof-room").innerText = `Room: ${stu.room} | Code: ${stu.code}`;
+    // PROFILE, PAUSE & EDIT LOGIC
+    function openProfile(code) {
+        currentActiveCode = code; let stu = allStudents.find(s => s.code === code);
+        document.getElementById("prof-img").src = stu.photo; 
+        document.getElementById("prof-name").innerText = stu.name; 
+        document.getElementById("prof-room").innerText = `Room: ${stu.room} | Code: ${stu.code}`;
         
         let days = getDaysLeft(stu.feeValidTill), badge = document.getElementById("prof-days"), pBtn = document.getElementById("btn-pause");
         
@@ -400,24 +363,29 @@
 
     function openEditPopup() {
         let stu = allStudents.find(s => s.code === currentActiveCode);
-        document.getElementById("edit-name").value = stu.name; document.getElementById("edit-date").value = stu.feeValidTill; document.getElementById("edit-status").value = stu.status;
+        document.getElementById("edit-name").value = stu.name; document.getElementById("edit-room").value = stu.room;
+        document.getElementById("edit-date").value = stu.feeValidTill; document.getElementById("edit-status").value = stu.status;
         document.getElementById("edit-popup").style.display = "flex";
     }
     function closeEditPopup() { document.getElementById("edit-popup").style.display = "none"; }
+    
     async function updateProfile() {
-        let uName = document.getElementById("edit-name").value, uDate = document.getElementById("edit-date").value, uStatus = document.getElementById("edit-status").value;
-        let finalPhoto = currentActivePhoto; let file = document.getElementById("edit-photo").files[0]; if(file) finalPhoto = await compressImage(file); 
-        await db.collection("students").doc(currentActiveCode).update({ name: uName, feeValidTill: uDate, status: uStatus, photo: finalPhoto });
+        let uName = document.getElementById("edit-name").value, uRoom = document.getElementById("edit-room").value, uDate = document.getElementById("edit-date").value, uStatus = document.getElementById("edit-status").value;
+        await db.collection("students").doc(currentActiveCode).update({ name: uName, room: uRoom, feeValidTill: uDate, status: uStatus });
         closeEditPopup(); openProfile(currentActiveCode); 
     }
 
-    // CHECK IF A DATE WAS PAUSED
+    async function deleteStudent() {
+        if(confirm("⚠️ Pura record DELETE karna chahte hain?")) {
+            await db.collection("students").doc(currentActiveCode).delete();
+            closeEditPopup(); closeProfile();
+        }
+    }
+
     function isDatePaused(dateStr, stu) {
         let d = new Date(dateStr);
         if(stu.lastPauseDate && d >= new Date(stu.lastPauseDate)) return true;
-        if(stu.pauseHistory) {
-            for(let h of stu.pauseHistory) { if(d >= new Date(h.start) && d < new Date(h.end)) return true; }
-        }
+        if(stu.pauseHistory) { for(let h of stu.pauseHistory) { if(d >= new Date(h.start) && d < new Date(h.end)) return true; } }
         return false;
     }
 
