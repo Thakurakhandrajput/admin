@@ -3,35 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OBC Mess - Admin</title>
+    <title>OBC Mess - Dashboard</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
         /* ================= PREMIUM BASE STYLES ================= */
-        :root {
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-main: #1d1d1f;
-            --text-muted: #86868b;
-            --primary: #007AFF;
-            --success: #34C759;
-            --danger: #FF3B30;
-            --warning: #FF9500;
-        }
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --warning: #FF9500; }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; overflow-x: hidden; }
 
-        /* ================= LOGIN SCREEN ================= */
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; }
-        .login-box { background: #1c1c1e; padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; width: 90%; max-width: 350px; border: 1px solid rgba(255,255,255,0.05); }
-        .login-box h2 { color: #fff; margin: 0 0 5px 0; font-weight: 700; }
-        .login-box p { color: var(--text-muted); font-size: 13px; margin-bottom: 25px; }
-        .login-box input { width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #333; background: #2c2c2e; color: #fff; margin-bottom: 15px; font-size: 16px; outline: none; transition: 0.2s; }
-        .login-box input:focus { border-color: var(--primary); background: #1c1c1e; }
-        .login-box button { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .login-box button:active { transform: scale(0.95); opacity: 0.9; }
+        /* ================= APP LOADER (Prevents Flashing) ================= */
+        #app-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; }
+        .spinner { border: 4px solid rgba(0, 122, 255, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         #main-app { display: none; animation: fadeIn 0.4s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -43,8 +29,8 @@
         .admin-avatar { width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(135deg, #000, #333); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
 
         /* ================= STATS CARDS ================= */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-bottom: 25px; }
-        .stat-card { padding: 20px; border-radius: 24px; color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; text-decoration: none; display: block;}
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-bottom: 20px; }
+        .stat-card { padding: 20px; border-radius: 24px; color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; display: block;}
         .stat-card:active { transform: scale(0.94); }
         .stat-card h3 { margin: 0; font-size: 14px; font-weight: 600; opacity: 0.9; }
         .stat-card h2 { margin: 5px 0 0 0; font-size: 34px; font-weight: 800; }
@@ -55,10 +41,12 @@
         .bg-black { background: linear-gradient(135deg, #2c2c2e, #1c1c1e); }
         .bg-blue { background: linear-gradient(135deg, #007AFF, #0066d6); }
 
-        /* ================= SEARCH BAR ================= */
-        .search-container { padding: 0 20px; margin-bottom: 20px; }
-        .search-box { width: 100%; padding: 14px 20px; border-radius: 16px; border: none; background: #e3e3e8; outline: none; font-size: 16px; font-weight: 500; color: var(--text-main); transition: 0.2s; }
+        /* ================= SEARCH & SORT ROW ================= */
+        .controls-row { padding: 0 20px; display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .search-box { flex: 1; padding: 14px 20px; border-radius: 16px; border: none; background: #e3e3e8; outline: none; font-size: 15px; font-weight: 500; color: var(--text-main); transition: 0.2s; }
         .search-box:focus { background: #fff; box-shadow: 0 0 0 2px var(--primary); }
+        .btn-sort { background: #fff; border: 1px solid #e5e5ea; padding: 0 15px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--text-main); box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer; height: 48px; gap: 6px; transition: 0.2s;}
+        .btn-sort:active { background: #f0f0f5; transform: scale(0.95);}
 
         /* ================= DIRECTORY LIST ================= */
         .section-header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-bottom: 10px; }
@@ -74,7 +62,7 @@
         
         .badge { padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;}
         .text-green { color: var(--success); background: rgba(52, 199, 89, 0.15); }
-        .text-red { color: var(--danger); background: rgba(255, 59, 48, 0.15); }
+        .text-red { color: var(--danger); background: rgba(255, 59, 48, 0.15); border: 1px solid rgba(255,59,48,0.3);}
         .text-gray { color: var(--text-muted); background: rgba(142, 142, 147, 0.15); }
         .text-blue { color: var(--primary); background: rgba(0, 122, 255, 0.15); }
 
@@ -85,34 +73,34 @@
         .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s;}
         .nav-item:active .nav-icon { transform: scale(0.8); }
 
-        /* ================= MEALS BOTTOM SHEET (PREMIUM POPUP) ================= */
-        .bottom-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; }
+        /* ================= BOTTOM SHEETS (Sort & Meals) ================= */
+        .bottom-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(3px);}
         .bottom-sheet-overlay.active { opacity: 1; visibility: visible; }
-        
-        .bottom-sheet { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 30px 25px 40px 25px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; }
+        .bottom-sheet { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 30px 25px 40px 25px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; max-height: 85vh; overflow-y: auto;}
         .bottom-sheet-overlay.active .bottom-sheet { transform: translateY(0); }
-        
         .drag-handle { width: 40px; height: 5px; background: #e5e5ea; border-radius: 5px; margin: 0 auto 20px auto; }
         .sheet-title { font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--text-main); }
         
         .meal-row { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 18px 20px; border-radius: 16px; margin-bottom: 12px; font-weight: 700; font-size: 16px; border: 1px solid #f0f0f0;}
         .meal-row span:last-child { color: var(--primary); font-size: 20px; font-weight: 800; background: rgba(0,122,255,0.1); padding: 5px 15px; border-radius: 10px;}
         .btn-sheet-close { width: 100%; background: #e5e5ea; color: var(--text-main); border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; margin-top: 15px; cursor: pointer; }
+
+        /* Sort Options */
+        .sort-group { margin-bottom: 20px; }
+        .sort-group h4 { font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; font-weight: 700;}
+        .sort-option { display: flex; align-items: center; justify-content: space-between; padding: 16px; background: #f9f9f9; border-radius: 14px; margin-bottom: 8px; font-weight: 600; cursor: pointer; border: 2px solid transparent;}
+        .sort-option.active { border-color: var(--primary); background: rgba(0,122,255,0.05); color: var(--primary);}
     </style>
 </head>
 <body>
 
-    <!-- LOGIN SCREEN -->
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2>System Login</h2>
-            <p>Admin authentication required</p>
-            <input type="email" id="admin-email" placeholder="Admin Email">
-            <input type="password" id="admin-pass" placeholder="Password">
-            <button onclick="loginWithFirebase()">Login Securely</button>
-        </div>
+    <!-- APP LOADER (Shown until Firebase checks auth) -->
+    <div id="app-loader">
+        <div class="spinner"></div>
+        <p style="color: #888; font-weight: 600;">Authenticating...</p>
     </div>
 
+    <!-- MAIN DASHBOARD APP -->
     <div id="main-app">
         <!-- HEADER -->
         <div class="header">
@@ -125,30 +113,37 @@
 
         <!-- STATS GRID -->
         <div class="stats-grid">
-            <a href="index.html" class="stat-card bg-green" style="text-decoration: none;">
-                <h3>Active</h3><h2 id="stat-active">0</h2><p>View All</p>
-            </a>
-            <a href="overdue.html" class="stat-card bg-red" style="text-decoration: none;">
-                <h3>Overdue</h3><h2 id="stat-due">0</h2><p>Go to Page</p>
-            </a>
-            <div class="stat-card bg-black" onclick="document.getElementById('search-box').focus()">
-                <h3>Capacity</h3><h2 id="stat-total">0</h2><p>Registered</p>
+            <div class="stat-card bg-green" onclick="setFilterAndSort('active', 'smart')">
+                <h3>Active</h3><h2 id="stat-active">0</h2><p>Click to Filter</p>
             </div>
-            <div class="stat-card bg-blue" onclick="openMealsSheet()">
-                <h3>Meals</h3><h2 id="stat-meals">0</h2><p>Tap for details</p>
+            <div class="stat-card bg-red" onclick="setFilterAndSort('fee_due', 'smart')">
+                <h3>Overdue</h3><h2 id="stat-due">0</h2><p>Click to Filter</p>
+            </div>
+            <div class="stat-card bg-black" onclick="setFilterAndSort('all', 'smart')">
+                <h3>Capacity</h3><h2 id="stat-total">0</h2><p>Total List</p>
+            </div>
+            <div class="stat-card bg-blue" onclick="openSheet('meals-sheet')">
+                <h3>Meals</h3><h2 id="stat-meals">0</h2><p>Served Today</p>
             </div>
         </div>
 
-        <!-- SEARCH -->
-        <div class="search-container">
-            <input type="text" id="search-box" class="search-box" placeholder="🔍 Search Name or Code..." onkeyup="filterList()">
+        <!-- SEARCH & SORT CONTROLS -->
+        <div class="controls-row">
+            <input type="text" id="search-box" class="search-box" placeholder="🔍 Search Name or Code..." onkeyup="applySortAndFilter()">
+            <button class="btn-sort" onclick="openSheet('sort-sheet')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="8" y1="12" x2="20" y2="12"></line><line x1="12" y1="18" x2="20" y2="18"></line></svg>
+                Sort
+            </button>
         </div>
 
-        <div class="section-header"><h4>Directory (Active & Paused)</h4></div>
+        <div class="section-header">
+            <h4 id="list-title">Directory (Smart Sorted)</h4>
+            <span id="filter-badge" style="display:none; font-size:11px; font-weight:700; color:var(--primary); background:rgba(0,122,255,0.1); padding:4px 10px; border-radius:8px;">Filtered</span>
+        </div>
         
         <!-- STUDENT LIST -->
         <div class="list-container" id="student-list">
-            <div style="text-align:center; padding: 20px; color:#888; font-weight:600;">Loading Students...</div>
+            <div style="text-align:center; padding: 20px; color:#888; font-weight:600;">Loading Directory...</div>
         </div>
 
         <!-- BOTTOM NAV -->
@@ -159,15 +154,43 @@
         </div>
     </div>
 
-    <!-- PREMIUM MEALS BOTTOM SHEET -->
+    <!-- MEALS BOTTOM SHEET -->
     <div id="meals-sheet" class="bottom-sheet-overlay">
         <div class="bottom-sheet">
-            <div class="drag-handle"></div>
+            <div class="drag-handle" onclick="closeSheet('meals-sheet')"></div>
             <div class="sheet-title">🍽️ Today's Consumption</div>
             <div class="meal-row"><span>🌅 Breakfast</span> <span id="md-b">0</span></div>
             <div class="meal-row"><span>☀️ Lunch</span> <span id="md-l">0</span></div>
             <div class="meal-row"><span>🌙 Dinner</span> <span id="md-d">0</span></div>
-            <button class="btn-sheet-close" onclick="closeMealsSheet()">Close Details</button>
+            <button class="btn-sheet-close" onclick="closeSheet('meals-sheet')">Close Details</button>
+        </div>
+    </div>
+
+    <!-- SORT & FILTER BOTTOM SHEET (Flipkart Style) -->
+    <div id="sort-sheet" class="bottom-sheet-overlay">
+        <div class="bottom-sheet">
+            <div class="drag-handle" onclick="closeSheet('sort-sheet')"></div>
+            <div class="sheet-title">Sort & Filter</div>
+            
+            <div class="sort-group">
+                <h4>Filter By Status</h4>
+                <div class="sort-option active" id="flt-all" onclick="updateFilter('all')">View All Students <span>✔</span></div>
+                <div class="sort-option" id="flt-active" onclick="updateFilter('active')">🟢 Active Only <span></span></div>
+                <div class="sort-option" id="flt-fee_due" onclick="updateFilter('fee_due')">🔴 Overdue Only <span></span></div>
+                <div class="sort-option" id="flt-paused" onclick="updateFilter('paused')">⏸️ Paused (Leave) <span></span></div>
+                <div class="sort-option" id="flt-banned" onclick="updateFilter('banned')">⛔ Banned <span></span></div>
+            </div>
+
+            <div class="sort-group">
+                <h4>Sort Order</h4>
+                <div class="sort-option active" id="srt-smart" onclick="updateSort('smart')">⚡ Smart (Due first, then by days) <span>✔</span></div>
+                <div class="sort-option" id="srt-days_asc" onclick="updateSort('days_asc')">⏳ Days Left: Low to High <span></span></div>
+                <div class="sort-option" id="srt-days_desc" onclick="updateSort('days_desc')">⏳ Days Left: High to Low <span></span></div>
+                <div class="sort-option" id="srt-az" onclick="updateSort('az')">🔤 Name: A to Z <span></span></div>
+                <div class="sort-option" id="srt-za" onclick="updateSort('za')">🔤 Name: Z to A <span></span></div>
+            </div>
+
+            <button class="btn-sheet-close" style="background:var(--primary); color:#fff;" onclick="closeSheet('sort-sheet')">Apply & Close</button>
         </div>
     </div>
 
@@ -187,38 +210,35 @@
 
     let allStudents = [];
     let todayAttendance = [];
+    
+    // Sort & Filter States
+    let currentFilter = 'all'; // all, active, fee_due, paused, banned
+    let currentSort = 'smart'; // smart, az, za, days_asc, days_desc
 
     // SET TODAY'S DATE
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     document.getElementById('today-date').innerText = new Date().toLocaleDateString('en-US', options);
 
-    // --- 2. AUTHENTICATION ---
+    // --- 2. AUTHENTICATION (NO FLASHING) ---
     auth.onAuthStateChanged((user) => {
-        if (user) {
-            document.getElementById("login-overlay").style.display = "none";
+        if (!user) {
+            window.location.replace("login.html"); // Redirect silently
+        } else {
+            // Hide Loader, Show App
+            document.getElementById("app-loader").style.display = "none";
             document.getElementById("main-app").style.display = "block";
             startDatabaseSync(); 
-        } else {
-            document.getElementById("main-app").style.display = "none";
-            document.getElementById("login-overlay").style.display = "flex";
         }
     });
-
-    function loginWithFirebase() {
-        let e = document.getElementById("admin-email").value, p = document.getElementById("admin-pass").value;
-        if(!e || !p) return alert("Please enter Email & Password");
-        auth.signInWithEmailAndPassword(e, p).catch(err => alert("❌ Login Failed! Incorrect details."));
-    }
 
     // --- 3. CORE LOGIC ---
     function getDaysLeft(dateStr) {
         let today = new Date(); today.setHours(0,0,0,0);
         let target = new Date(dateStr);
-        return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        return Math.ceil((target - target.getTimezoneOffset()*60000 - today) / (1000 * 60 * 60 * 24));
     }
 
     function startDatabaseSync() {
-        // Fetch Students
         db.collection("students").onSnapshot((snap) => {
             allStudents = [];
             let tTotal = 0, tActive = 0, tDue = 0;
@@ -226,6 +246,7 @@
             snap.forEach(doc => {
                 let data = doc.data();
                 let days = getDaysLeft(data.feeValidTill);
+                data.daysLeft = days; // Store for sorting
                 
                 // AUTO EXPIRE LOGIC
                 if(days < 0 && data.status === 'active') {
@@ -243,11 +264,9 @@
             document.getElementById("stat-active").innerText = tActive;
             document.getElementById("stat-due").innerText = tDue;
             
-            // Note: On index.html, we only show Active and Paused. Due goes to overdue.html
-            renderList(allStudents.filter(s => s.status !== 'fee_due' && s.status !== 'banned'));
+            applySortAndFilter();
         });
 
-        // Fetch Today's Meals
         let todayStr = new Date().toISOString().split('T')[0];
         db.collection("attendance").where("date", "==", todayStr).onSnapshot(snap => {
             todayAttendance = [];
@@ -257,23 +276,84 @@
         });
     }
 
+    // --- 4. FLIPKART STYLE SORT & FILTER LOGIC ---
+    function setFilterAndSort(filterType, sortType) {
+        updateFilter(filterType);
+        updateSort(sortType);
+        applySortAndFilter();
+        window.scrollTo({ top: document.getElementById('search-box').offsetTop - 20, behavior: 'smooth' });
+    }
+
+    function updateFilter(type) {
+        currentFilter = type;
+        document.querySelectorAll("[id^='flt-']").forEach(el => { el.classList.remove('active'); el.querySelector('span').innerText = ''; });
+        document.getElementById('flt-' + type).classList.add('active');
+        document.getElementById('flt-' + type).querySelector('span').innerText = '✔';
+    }
+
+    function updateSort(type) {
+        currentSort = type;
+        document.querySelectorAll("[id^='srt-']").forEach(el => { el.classList.remove('active'); el.querySelector('span').innerText = ''; });
+        document.getElementById('srt-' + type).classList.add('active');
+        document.getElementById('srt-' + type).querySelector('span').innerText = '✔';
+    }
+
+    function applySortAndFilter() {
+        // 1. Apply Filter
+        let filtered = allStudents.filter(s => {
+            if(currentFilter === 'all') return true;
+            return s.status === currentFilter;
+        });
+
+        // 2. Apply Search
+        let q = document.getElementById("search-box").value.toLowerCase();
+        if(q) {
+            filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || s.code.includes(q));
+        }
+
+        // 3. Apply Sort
+        filtered.sort((a, b) => {
+            if(currentSort === 'smart') {
+                // Smart: Fee Due on top (most negative first), then active/paused sorted by days left
+                return a.daysLeft - b.daysLeft; 
+            } else if(currentSort === 'days_asc') {
+                return a.daysLeft - b.daysLeft;
+            } else if(currentSort === 'days_desc') {
+                return b.daysLeft - a.daysLeft;
+            } else if(currentSort === 'az') {
+                return a.name.localeCompare(b.name);
+            } else if(currentSort === 'za') {
+                return b.name.localeCompare(a.name);
+            }
+        });
+
+        // Update UI Title
+        if(currentFilter !== 'all') {
+            document.getElementById('filter-badge').style.display = 'inline-block';
+            document.getElementById('filter-badge').innerText = currentFilter.toUpperCase().replace('_', ' ');
+        } else {
+            document.getElementById('filter-badge').style.display = 'none';
+        }
+
+        renderList(filtered);
+    }
+
     function renderList(list) {
         const container = document.getElementById("student-list");
         container.innerHTML = "";
         
         if(list.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding: 20px; color:#888;">No students found here.</div>`;
+            container.innerHTML = `<div style="text-align:center; padding: 30px; color:#888; font-weight:600;">No records found.</div>`;
             return;
         }
 
         list.forEach(stu => {
-            let days = getDaysLeft(stu.feeValidTill);
-            let badgeClass = 'text-green', badgeText = days >= 0 ? days + ' Days' : 'Overdue';
+            let badgeClass = 'text-green', badgeText = stu.daysLeft >= 0 ? stu.daysLeft + ' Days' : 'Overdue';
             
-            if(stu.status === 'paused') { badgeClass = 'text-blue'; badgeText = 'PAUSED ⏸'; }
-            else if(days < 0) { badgeClass = 'text-red'; }
+            if(stu.status === 'banned') { badgeClass = 'text-gray'; badgeText = 'BANNED'; }
+            else if(stu.status === 'paused') { badgeClass = 'text-blue'; badgeText = 'PAUSED ⏸'; }
+            else if(stu.daysLeft < 0 || stu.status === 'fee_due') { badgeClass = 'text-red'; badgeText = `Due: ${Math.abs(stu.daysLeft)} Days`; }
 
-            // LINKING TO PROFILE.HTML (Solves the back button issue!)
             container.innerHTML += `
                 <a href="profile.html?code=${stu.code}" class="list-item">
                     <img src="${stu.photo}" class="list-avatar">
@@ -286,13 +366,7 @@
         });
     }
 
-    function filterList() {
-        let q = document.getElementById("search-box").value.toLowerCase();
-        let filtered = allStudents.filter(s => s.status !== 'fee_due' && s.status !== 'banned');
-        renderList(filtered.filter(s => s.name.toLowerCase().includes(q) || s.code.includes(q)));
-    }
-
-    // --- 4. BACK-BUTTON SAFE BOTTOM SHEET ---
+    // --- 5. BOTTOM SHEETS & NAVIGATION ---
     function updateMealsBreakdown() {
         let b=0, l=0, d=0;
         todayAttendance.forEach(a => {
@@ -304,27 +378,21 @@
         document.getElementById('md-d').innerText = d;
     }
 
-    function openMealsSheet() {
-        // Pushes a state to history so Android Back Button closes the modal instead of the app
-        history.pushState({ modal: 'meals' }, "Meals Breakdown", "#meals");
-        document.getElementById('meals-sheet').classList.add('active');
+    function openSheet(id) {
+        history.pushState({ modal: id }, id, "#" + id);
+        document.getElementById(id).classList.add('active');
     }
 
-    function closeMealsSheet() {
-        // If we close it manually via button, we should also pop the state
-        if(history.state && history.state.modal === 'meals') {
-            history.back();
-        } else {
-            document.getElementById('meals-sheet').classList.remove('active');
-        }
+    function closeSheet(id) {
+        if(history.state && history.state.modal === id) { history.back(); } 
+        else { document.getElementById(id).classList.remove('active'); }
+        if(id === 'sort-sheet') applySortAndFilter();
     }
 
-    // Listen for Android Back Button
     window.addEventListener('popstate', function(event) {
-        // This fires when back button is pressed. We just close the modal.
         document.getElementById('meals-sheet').classList.remove('active');
+        document.getElementById('sort-sheet').classList.remove('active');
     });
-
 </script>
 </body>
 </html>
