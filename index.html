@@ -3,216 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OBC Mess - Admin Dashboard</title>
+    <title>OBC Mess - Admin</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
-        /* APP BASE STYLES (PREMIUM LIGHT THEME) */
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: #F2F4F7; color: #1c1c1e; margin: 0; padding: 0; padding-bottom: 80px; overflow-x: hidden; }
-        
-        /* LOGIN OVERLAY */
-        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b0f19; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .login-box { background: #1a1e24; padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); text-align: center; width: 90%; max-width: 350px; }
-        .login-box h2 { color: #fff; margin: 0 0 10px 0; }
-        .login-box p { color: #8e8e93; font-size: 12px; margin-bottom: 20px; }
-        .login-box input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #2d3748; background: #0b0f19; color: #fff; margin-bottom: 15px; font-size: 16px; outline: none; }
-        .login-box button { width: 100%; background: #007AFF; color: #fff; border: none; padding: 15px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        
-        #main-app { display: none; }
+        /* ================= PREMIUM BASE STYLES ================= */
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --text-main: #1d1d1f;
+            --text-muted: #86868b;
+            --primary: #007AFF;
+            --success: #34C759;
+            --danger: #FF3B30;
+            --warning: #FF9500;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; overflow-x: hidden; }
 
-        /* HEADER */
-        .header { padding: 30px 20px 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .header p { margin: 0; font-size: 11px; color: #8e8e93; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .header h1 { margin: 2px 0 0 0; font-size: 24px; font-weight: 800; color: #000; }
-        .admin-avatar { width: 45px; height: 45px; border-radius: 50%; background: #000; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        /* ================= LOGIN SCREEN ================= */
+        #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.3s; }
+        .login-box { background: #1c1c1e; padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); text-align: center; width: 90%; max-width: 350px; border: 1px solid rgba(255,255,255,0.05); }
+        .login-box h2 { color: #fff; margin: 0 0 5px 0; font-weight: 700; }
+        .login-box p { color: var(--text-muted); font-size: 13px; margin-bottom: 25px; }
+        .login-box input { width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #333; background: #2c2c2e; color: #fff; margin-bottom: 15px; font-size: 16px; outline: none; transition: 0.2s; }
+        .login-box input:focus { border-color: var(--primary); background: #1c1c1e; }
+        .login-box button { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .login-box button:active { transform: scale(0.95); opacity: 0.9; }
 
-        /* STATS GRID */
+        #main-app { display: none; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ================= HEADER ================= */
+        .header { padding: 30px 20px 20px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .header h1 { margin: 2px 0 0 0; font-size: 28px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px;}
+        .admin-avatar { width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(135deg, #000, #333); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); }
+
+        /* ================= STATS CARDS ================= */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 0 20px; margin-bottom: 25px; }
-        .stat-card { padding: 20px; border-radius: 20px; color: #fff; box-shadow: 0 8px 15px rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s; }
-        .stat-card:active { transform: scale(0.95); }
+        .stat-card { padding: 20px; border-radius: 24px; color: #fff; box-shadow: 0 10px 20px rgba(0,0,0,0.08); cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; overflow: hidden; text-decoration: none; display: block;}
+        .stat-card:active { transform: scale(0.94); }
         .stat-card h3 { margin: 0; font-size: 14px; font-weight: 600; opacity: 0.9; }
-        .stat-card h2 { margin: 5px 0 0 0; font-size: 32px; font-weight: 800; }
-        .stat-card p { margin: 5px 0 0 0; font-size: 11px; font-weight: 600; opacity: 0.8; }
-        .bg-green { background: linear-gradient(135deg, #34C759, #28a745); }
-        .bg-red { background: linear-gradient(135deg, #FF3B30, #dc3545); }
-        .bg-yellow { background: linear-gradient(135deg, #FFCC00, #ffb300); color: #000; }
-        .bg-blue { background: linear-gradient(135deg, #007AFF, #0056b3); }
+        .stat-card h2 { margin: 5px 0 0 0; font-size: 34px; font-weight: 800; }
+        .stat-card p { margin: 5px 0 0 0; font-size: 11px; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        .bg-green { background: linear-gradient(135deg, #34C759, #30b050); }
+        .bg-red { background: linear-gradient(135deg, #FF3B30, #e6352b); }
+        .bg-black { background: linear-gradient(135deg, #2c2c2e, #1c1c1e); }
+        .bg-blue { background: linear-gradient(135deg, #007AFF, #0066d6); }
 
-        /* LIST CONTAINER */
-        .section-header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-bottom: 15px; }
-        .section-header h4 { margin: 0; font-size: 12px; color: #8e8e93; font-weight: 700; text-transform: uppercase; }
+        /* ================= SEARCH BAR ================= */
+        .search-container { padding: 0 20px; margin-bottom: 20px; }
+        .search-box { width: 100%; padding: 14px 20px; border-radius: 16px; border: none; background: #e3e3e8; outline: none; font-size: 16px; font-weight: 500; color: var(--text-main); transition: 0.2s; }
+        .search-box:focus { background: #fff; box-shadow: 0 0 0 2px var(--primary); }
+
+        /* ================= DIRECTORY LIST ================= */
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-bottom: 10px; }
+        .section-header h4 { margin: 0; font-size: 13px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
+        
         .list-container { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
-        .list-item { background: #fff; border-radius: 16px; padding: 15px; display: flex; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.04); cursor: pointer; transition: 0.2s; }
-        .list-item:active { transform: scale(0.98); }
-        .list-avatar { width: 45px; height: 45px; border-radius: 12px; object-fit: cover; margin-right: 15px; }
+        .list-item { background: var(--card-bg); border-radius: 20px; padding: 16px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); cursor: pointer; transition: 0.2s; text-decoration: none; color: inherit; border: 1px solid rgba(0,0,0,0.02);}
+        .list-item:active { transform: scale(0.97); background: #f9f9f9;}
+        .list-avatar { width: 50px; height: 50px; border-radius: 14px; object-fit: cover; margin-right: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
         .list-info { flex: 1; }
-        .list-info h4 { margin: 0; font-size: 16px; font-weight: 700; }
-        .list-info p { margin: 2px 0 0 0; font-size: 12px; color: #8e8e93; }
+        .list-info h4 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.3px;}
+        .list-info p { margin: 3px 0 0 0; font-size: 13px; color: var(--text-muted); font-weight: 500;}
         
-        /* BADGES */
-        .badge { padding: 5px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
-        .text-green { color: #34C759; background: rgba(52, 199, 89, 0.1); }
-        .text-red { color: #FF3B30; background: rgba(255, 59, 48, 0.1); }
-        .text-gray { color: #8e8e93; background: rgba(142, 142, 147, 0.1); }
-        .text-blue { color: #007AFF; background: rgba(0, 122, 255, 0.1); }
+        .badge { padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;}
+        .text-green { color: var(--success); background: rgba(52, 199, 89, 0.15); }
+        .text-red { color: var(--danger); background: rgba(255, 59, 48, 0.15); }
+        .text-gray { color: var(--text-muted); background: rgba(142, 142, 147, 0.15); }
+        .text-blue { color: var(--primary); background: rgba(0, 122, 255, 0.15); }
 
-        /* BOTTOM NAV (Links to other files) */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #e5e5ea; display: flex; justify-content: space-around; padding: 15px 0 25px 0; z-index: 100; box-shadow: 0 -5px 15px rgba(0,0,0,0.05); }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: #8e8e93; font-size: 10px; font-weight: 600; cursor: pointer; text-decoration: none; }
-        .nav-item.active { color: #007AFF; }
-        .nav-icon { font-size: 22px; margin-bottom: 4px; }
+        /* ================= BOTTOM NAVIGATION ================= */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-around; padding: 15px 0 25px 0; z-index: 100; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-muted); font-size: 10px; font-weight: 600; cursor: pointer; text-decoration: none; transition: 0.2s; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s;}
+        .nav-item:active .nav-icon { transform: scale(0.8); }
 
-        /* MODALS (Profile & Edit) */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 300; align-items: center; justify-content: center; backdrop-filter: blur(4px); padding: 20px; }
-        .modal-box { background: #fff; width: 100%; max-width: 360px; border-radius: 20px; padding: 25px; position: relative; animation: popIn 0.3s ease; max-height: 90vh; overflow-y: auto;}
-        @keyframes popIn { from{ transform: scale(0.9); opacity:0;} to{ transform: scale(1); opacity:1;} }
-        .btn-close-modal { position: absolute; top: 15px; right: 15px; font-size: 18px; font-weight: bold; background: none; border: none; cursor: pointer; }
-
-        #profile-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #F2F4F7; z-index: 200; transform: translateY(100%); transition: transform 0.4s ease; overflow-y: auto; padding-bottom: 40px; }
-        #profile-modal.open { transform: translateY(0); }
-        .profile-header { background: #fff; padding: 40px 20px 20px 20px; text-align: center; border-radius: 0 0 30px 30px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
-        .btn-back { position: absolute; top: 20px; left: 20px; font-size: 24px; font-weight: bold; cursor: pointer; }
-        .btn-edit { position: absolute; top: 20px; right: 20px; font-size: 22px; cursor: pointer; background: #F2F4F7; padding: 8px; border-radius: 50%; }
-        .profile-pic { width: 110px; height: 110px; border-radius: 30px; object-fit: cover; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .profile-header h2 { margin: 0; font-size: 22px; font-weight: 800; }
-        .profile-header p { margin: 5px 0 15px 0; color: #8e8e93; font-size: 14px; font-weight: 600; }
+        /* ================= MEALS BOTTOM SHEET (PREMIUM POPUP) ================= */
+        .bottom-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; }
+        .bottom-sheet-overlay.active { opacity: 1; visibility: visible; }
         
-        .days-left-badge { display: inline-block; padding: 8px 20px; background: #000; color: #fff; border-radius: 20px; font-weight: 700; font-size: 14px; margin-bottom: 15px;}
-        .expired { background: #FF3B30; } .paused-badge { background: #007AFF; }
+        .bottom-sheet { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 30px 25px 40px 25px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; }
+        .bottom-sheet-overlay.active .bottom-sheet { transform: translateY(0); }
         
-        .btn-pause { background: #007AFF; color: #fff; border: none; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; margin-bottom: 10px; width: 100%; font-size: 16px; box-shadow: 0 5px 15px rgba(0,122,255,0.3);}
-
-        .calendar-card { background: #fff; margin: 20px; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .cal-title { font-size: 14px; font-weight: 700; margin-bottom: 15px; }
-        .cal-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
-        .cal-date { font-weight: 700; font-size: 13px; width: 60px; }
-        .meal-dots { display: flex; gap: 8px; }
-        .dot { padding: 4px 10px; border-radius: 8px; font-size: 10px; font-weight: 800; }
-        .dot.yes { background: rgba(52, 199, 89, 0.15); color: #28a745; }
-        .dot.no { background: rgba(255, 59, 48, 0.1); color: #FF3B30; }
-        .dot.pause { background: rgba(0, 122, 255, 0.15); color: #007AFF; } 
-        .dot.due { background: rgba(255, 152, 0, 0.15); color: #ff9800; }
-
-        /* INPUTS & BUTTONS */
-        .input-group { margin-bottom: 15px; text-align: left; }
-        .input-group label { display: block; font-size: 11px; color: #8e8e93; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; }
-        .input-group input, .input-group select { width: 100%; background: #F2F4F7; border: 1px solid #e5e5ea; padding: 14px; border-radius: 12px; font-size: 15px; outline: none; }
-        .btn-main { width: 100%; background: #007AFF; color: #fff; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; margin-top: 10px; cursor: pointer; transition: 0.2s;}
-        .btn-main:active { transform: scale(0.97); }
-        .btn-danger { background: transparent; color: #FF3B30; border: 2px solid #FF3B30; }
-
-        .breakdown-row { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; padding: 10px 0; border-bottom: 1px solid #eee;}
+        .drag-handle { width: 40px; height: 5px; background: #e5e5ea; border-radius: 5px; margin: 0 auto 20px auto; }
+        .sheet-title { font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 25px; color: var(--text-main); }
+        
+        .meal-row { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 18px 20px; border-radius: 16px; margin-bottom: 12px; font-weight: 700; font-size: 16px; border: 1px solid #f0f0f0;}
+        .meal-row span:last-child { color: var(--primary); font-size: 20px; font-weight: 800; background: rgba(0,122,255,0.1); padding: 5px 15px; border-radius: 10px;}
+        .btn-sheet-close { width: 100%; background: #e5e5ea; color: var(--text-main); border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; margin-top: 15px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- SECURE FIREBASE LOGIN -->
+    <!-- LOGIN SCREEN -->
     <div id="login-overlay">
         <div class="login-box">
-            <h2>Admin Login</h2>
-            <p>Enter Master Credentials</p>
-            <input type="email" id="admin-email" placeholder="Email Address">
+            <h2>System Login</h2>
+            <p>Admin authentication required</p>
+            <input type="email" id="admin-email" placeholder="Admin Email">
             <input type="password" id="admin-pass" placeholder="Password">
-            <button onclick="loginWithFirebase()">Secure Login</button>
+            <button onclick="loginWithFirebase()">Login Securely</button>
         </div>
     </div>
 
     <div id="main-app">
         <!-- HEADER -->
         <div class="header">
-            <div><p>Welcome Back</p><h1>Admin Panel</h1></div>
+            <div>
+                <p id="today-date">Loading...</p>
+                <h1>Dashboard</h1>
+            </div>
             <div class="admin-avatar">A</div>
         </div>
 
         <!-- STATS GRID -->
         <div class="stats-grid">
-            <div class="stat-card bg-green" onclick="filterByStatus('active')">
-                <h3>Active</h3><h2 id="stat-active">0</h2><p>Click to view</p>
+            <a href="index.html" class="stat-card bg-green" style="text-decoration: none;">
+                <h3>Active</h3><h2 id="stat-active">0</h2><p>View All</p>
+            </a>
+            <a href="overdue.html" class="stat-card bg-red" style="text-decoration: none;">
+                <h3>Overdue</h3><h2 id="stat-due">0</h2><p>Go to Page</p>
+            </a>
+            <div class="stat-card bg-black" onclick="document.getElementById('search-box').focus()">
+                <h3>Capacity</h3><h2 id="stat-total">0</h2><p>Registered</p>
             </div>
-            <div class="stat-card bg-red" onclick="filterByStatus('fee_due')">
-                <h3>Overdue</h3><h2 id="stat-due">0</h2><p>Click to view</p>
-            </div>
-            <div class="stat-card bg-yellow" onclick="filterByStatus('all')">
-                <h3>Total List</h3><h2 id="stat-total">0</h2><p>Registered</p>
-            </div>
-            <div class="stat-card bg-blue" onclick="showMealsModal()">
-                <h3>Meals</h3><h2 id="stat-meals">0</h2><p>Served Today</p>
+            <div class="stat-card bg-blue" onclick="openMealsSheet()">
+                <h3>Meals</h3><h2 id="stat-meals">0</h2><p>Tap for details</p>
             </div>
         </div>
 
-        <div class="section-header"><h4>Students Directory</h4></div>
-        <div style="padding: 0 20px; margin-bottom: 15px;">
-            <input type="text" id="search-box" placeholder="🔍 Search Name or Code..." onkeyup="filterList()" style="width:100%; padding: 12px; border-radius: 12px; border:none; background:#e5e5ea; outline:none; font-weight:500;">
+        <!-- SEARCH -->
+        <div class="search-container">
+            <input type="text" id="search-box" class="search-box" placeholder="🔍 Search Name or Code..." onkeyup="filterList()">
         </div>
+
+        <div class="section-header"><h4>Directory (Active & Paused)</h4></div>
         
         <!-- STUDENT LIST -->
-        <div class="list-container" id="student-list"></div>
+        <div class="list-container" id="student-list">
+            <div style="text-align:center; padding: 20px; color:#888; font-weight:600;">Loading Students...</div>
+        </div>
 
-        <!-- BOTTOM NAV (Links to other HTML files) -->
+        <!-- BOTTOM NAV -->
         <div class="bottom-nav">
             <a href="index.html" class="nav-item active"><div class="nav-icon">🏠</div><span>Home</span></a>
             <a href="add.html" class="nav-item"><div class="nav-icon">➕</div><span>Add New</span></a>
             <a href="setting.html" class="nav-item"><div class="nav-icon">⚙️</div><span>Settings</span></a>
         </div>
+    </div>
 
-        <!-- PROFILE VIEW MODAL -->
-        <div id="profile-modal">
-            <div class="profile-header">
-                <div class="btn-back" onclick="closeProfile()">❮</div>
-                <div class="btn-edit" onclick="openEditPopup()">✏️</div>
-                <img id="prof-img" class="profile-pic" src="">
-                <h2 id="prof-name">Name</h2>
-                <p id="prof-room">Room: - | Code: -</p>
-                <div id="prof-days" class="days-left-badge">Loading...</div>
-                <div style="padding: 0 20px;">
-                    <button id="btn-pause" class="btn-pause" onclick="togglePause()">⏸️ Pause Account</button>
-                </div>
-            </div>
-            <div class="calendar-card">
-                <div class="cal-title">📅 This Month's Meal Tracking</div>
-                <div id="cal-body">Loading...</div>
-            </div>
+    <!-- PREMIUM MEALS BOTTOM SHEET -->
+    <div id="meals-sheet" class="bottom-sheet-overlay">
+        <div class="bottom-sheet">
+            <div class="drag-handle"></div>
+            <div class="sheet-title">🍽️ Today's Consumption</div>
+            <div class="meal-row"><span>🌅 Breakfast</span> <span id="md-b">0</span></div>
+            <div class="meal-row"><span>☀️ Lunch</span> <span id="md-l">0</span></div>
+            <div class="meal-row"><span>🌙 Dinner</span> <span id="md-d">0</span></div>
+            <button class="btn-sheet-close" onclick="closeMealsSheet()">Close Details</button>
         </div>
-
-        <!-- EDIT POPUP MODAL -->
-        <div id="edit-popup" class="modal-overlay">
-            <div class="modal-box">
-                <button class="btn-close-modal" onclick="closeEditPopup()">✖</button>
-                <h3 style="margin-top:0;">✏️ Edit Details</h3>
-                <div class="input-group"><label>Name</label><input type="text" id="edit-name"></div>
-                <div class="input-group"><label>Room</label><input type="text" id="edit-room"></div>
-                <div class="input-group"><label>Fee Valid Till</label><input type="date" id="edit-date"></div>
-                <div class="input-group">
-                    <label>Account Status</label>
-                    <select id="edit-status">
-                        <option value="active">🟢 Active</option>
-                        <option value="fee_due">🟠 Fee Due</option>
-                        <option value="paused">⏸️ Paused</option>
-                        <option value="banned">🔴 Banned</option>
-                    </select>
-                </div>
-                <button class="btn-main" onclick="updateProfile()">💾 Save Changes</button>
-                <button class="btn-main btn-danger" onclick="deleteStudent()">🗑️ Delete Student</button>
-            </div>
-        </div>
-
-        <!-- MEALS BREAKDOWN MODAL -->
-        <div id="meals-modal" class="modal-overlay">
-            <div class="modal-box">
-                <button class="btn-close-modal" onclick="document.getElementById('meals-modal').style.display='none'">✖</button>
-                <h3 style="margin-top:0; margin-bottom:20px;">🍽️ Today's Meals</h3>
-                <div class="breakdown-row"><span>Breakfast:</span> <span id="md-b" style="color:#007AFF;">0</span></div>
-                <div class="breakdown-row"><span>Lunch:</span> <span id="md-l" style="color:#007AFF;">0</span></div>
-                <div class="breakdown-row" style="border:none;"><span>Dinner:</span> <span id="md-d" style="color:#007AFF;">0</span></div>
-            </div>
-        </div>
-
     </div>
 
 <script>
+    // --- 1. FIREBASE CONFIG ---
     const firebaseConfig = {
       apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE",
       authDomain: "obc-mess-system.firebaseapp.com",
@@ -227,9 +187,12 @@
 
     let allStudents = [];
     let todayAttendance = [];
-    let currentActiveCode = "";
 
-    // AUTH LOGIC
+    // SET TODAY'S DATE
+    const options = { weekday: 'long', month: 'long', day: 'numeric' };
+    document.getElementById('today-date').innerText = new Date().toLocaleDateString('en-US', options);
+
+    // --- 2. AUTHENTICATION ---
     auth.onAuthStateChanged((user) => {
         if (user) {
             document.getElementById("login-overlay").style.display = "none";
@@ -243,176 +206,125 @@
 
     function loginWithFirebase() {
         let e = document.getElementById("admin-email").value, p = document.getElementById("admin-pass").value;
-        if(!e || !p) return alert("Email & Password required!");
-        auth.signInWithEmailAndPassword(e, p).catch(err => alert("❌ Login Failed!"));
+        if(!e || !p) return alert("Please enter Email & Password");
+        auth.signInWithEmailAndPassword(e, p).catch(err => alert("❌ Login Failed! Incorrect details."));
     }
 
-    // HELPER FUNCTIONS
+    // --- 3. CORE LOGIC ---
     function getDaysLeft(dateStr) {
         let today = new Date(); today.setHours(0,0,0,0);
         let target = new Date(dateStr);
         return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
     }
 
-    // LOAD DATA
     function startDatabaseSync() {
+        // Fetch Students
         db.collection("students").onSnapshot((snap) => {
             allStudents = [];
             let tTotal = 0, tActive = 0, tDue = 0;
+            
             snap.forEach(doc => {
                 let data = doc.data();
                 let days = getDaysLeft(data.feeValidTill);
+                
+                // AUTO EXPIRE LOGIC
                 if(days < 0 && data.status === 'active') {
                     db.collection("students").doc(data.code).update({status: 'fee_due'});
                     data.status = 'fee_due'; 
                 }
+                
                 allStudents.push(data);
                 tTotal++;
                 if(data.status === 'active') tActive++;
                 else if(data.status === 'fee_due') tDue++;
             });
+            
             document.getElementById("stat-total").innerText = tTotal;
             document.getElementById("stat-active").innerText = tActive;
             document.getElementById("stat-due").innerText = tDue;
-            renderList(allStudents);
+            
+            // Note: On index.html, we only show Active and Paused. Due goes to overdue.html
+            renderList(allStudents.filter(s => s.status !== 'fee_due' && s.status !== 'banned'));
         });
 
+        // Fetch Today's Meals
         let todayStr = new Date().toISOString().split('T')[0];
         db.collection("attendance").where("date", "==", todayStr).onSnapshot(snap => {
             todayAttendance = [];
             snap.forEach(doc => todayAttendance.push(doc.data()));
             document.getElementById("stat-meals").innerText = snap.size;
+            updateMealsBreakdown();
         });
-    }
-
-    // FILTER & RENDER
-    function filterByStatus(status) {
-        document.getElementById('search-box').value = "";
-        if(status === 'all') renderList(allStudents);
-        else renderList(allStudents.filter(s => s.status === status));
     }
 
     function renderList(list) {
         const container = document.getElementById("student-list");
         container.innerHTML = "";
+        
+        if(list.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding: 20px; color:#888;">No students found here.</div>`;
+            return;
+        }
+
         list.forEach(stu => {
             let days = getDaysLeft(stu.feeValidTill);
             let badgeClass = 'text-green', badgeText = days >= 0 ? days + ' Days' : 'Overdue';
-            if(stu.status === 'banned') { badgeClass = 'text-gray'; badgeText = 'BANNED'; } 
-            else if(stu.status === 'paused') { badgeClass = 'text-blue'; badgeText = 'PAUSED ⏸'; }
+            
+            if(stu.status === 'paused') { badgeClass = 'text-blue'; badgeText = 'PAUSED ⏸'; }
             else if(days < 0) { badgeClass = 'text-red'; }
 
-            container.innerHTML += `<div class="list-item" onclick="openProfile('${stu.code}')">
-                <img src="${stu.photo}" class="list-avatar">
-                <div class="list-info"><h4>${stu.name}</h4><p>Code: ${stu.code} | Room: ${stu.room}</p></div>
-                <div><span class="badge ${badgeClass}">${badgeText}</span></div></div>`;
+            // LINKING TO PROFILE.HTML (Solves the back button issue!)
+            container.innerHTML += `
+                <a href="profile.html?code=${stu.code}" class="list-item">
+                    <img src="${stu.photo}" class="list-avatar">
+                    <div class="list-info">
+                        <h4>${stu.name}</h4>
+                        <p>Code: ${stu.code} • Room: ${stu.room}</p>
+                    </div>
+                    <div><span class="badge ${badgeClass}">${badgeText}</span></div>
+                </a>`;
         });
     }
 
     function filterList() {
         let q = document.getElementById("search-box").value.toLowerCase();
-        renderList(allStudents.filter(s => s.name.toLowerCase().includes(q) || s.code.includes(q)));
+        let filtered = allStudents.filter(s => s.status !== 'fee_due' && s.status !== 'banned');
+        renderList(filtered.filter(s => s.name.toLowerCase().includes(q) || s.code.includes(q)));
     }
 
-    function showMealsModal() {
+    // --- 4. BACK-BUTTON SAFE BOTTOM SHEET ---
+    function updateMealsBreakdown() {
         let b=0, l=0, d=0;
         todayAttendance.forEach(a => {
             let m = a.meal.toLowerCase();
             if(m === 'breakfast') b++; else if(m === 'lunch') l++; else if(m === 'dinner') d++;
         });
-        document.getElementById('md-b').innerText = b; document.getElementById('md-l').innerText = l; document.getElementById('md-d').innerText = d;
-        document.getElementById('meals-modal').style.display = 'flex';
+        document.getElementById('md-b').innerText = b; 
+        document.getElementById('md-l').innerText = l; 
+        document.getElementById('md-d').innerText = d;
     }
 
-    // PROFILE, PAUSE & EDIT LOGIC
-    function openProfile(code) {
-        currentActiveCode = code; let stu = allStudents.find(s => s.code === code);
-        document.getElementById("prof-img").src = stu.photo; 
-        document.getElementById("prof-name").innerText = stu.name; 
-        document.getElementById("prof-room").innerText = `Room: ${stu.room} | Code: ${stu.code}`;
-        
-        let days = getDaysLeft(stu.feeValidTill), badge = document.getElementById("prof-days"), pBtn = document.getElementById("btn-pause");
-        
-        if(stu.status === 'banned') { badge.innerText = `BANNED`; badge.className = "days-left-badge expired"; pBtn.style.display="none";} 
-        else if(stu.status === 'paused') { badge.innerText = `PAUSED (On Leave)`; badge.className = "days-left-badge paused-badge"; pBtn.style.display="block"; pBtn.innerText="▶️ Resume Account"; pBtn.style.background="#34C759"; }
-        else { badge.innerText = days >= 0 ? `${days} Days Left` : `Expired`; badge.className = days >= 0 ? "days-left-badge" : "days-left-badge expired"; pBtn.style.display="block"; pBtn.innerText="⏸️ Pause Account"; pBtn.style.background="#007AFF"; }
-
-        document.getElementById("profile-modal").classList.add("open");
-        loadCalendar(code, stu);
-    }
-    function closeProfile() { document.getElementById("profile-modal").classList.remove("open"); }
-
-    async function togglePause() {
-        let stu = allStudents.find(s => s.code === currentActiveCode);
-        let today = new Date().toISOString().split('T')[0];
-
-        if(stu.status === 'paused') { // Resume
-            let pDate = new Date(stu.lastPauseDate), tDate = new Date(today);
-            let daysPaused = Math.floor((tDate - pDate)/(1000*60*60*24));
-            let newExp = new Date(stu.feeValidTill); newExp.setDate(newExp.getDate() + daysPaused);
-            let hist = stu.pauseHistory || []; hist.push({start: stu.lastPauseDate, end: today});
-
-            await db.collection("students").doc(currentActiveCode).update({ status: 'active', lastPauseDate: null, pauseHistory: hist, feeValidTill: newExp.toISOString().split('T')[0] });
-            alert(`✅ Resumed! Expiry extended by ${daysPaused} days.`);
-        } else { // Pause
-            await db.collection("students").doc(currentActiveCode).update({ status: 'paused', lastPauseDate: today });
-            alert("⏸️ Account Paused! Meals will not be cut.");
-        }
-        openProfile(currentActiveCode);
+    function openMealsSheet() {
+        // Pushes a state to history so Android Back Button closes the modal instead of the app
+        history.pushState({ modal: 'meals' }, "Meals Breakdown", "#meals");
+        document.getElementById('meals-sheet').classList.add('active');
     }
 
-    function openEditPopup() {
-        let stu = allStudents.find(s => s.code === currentActiveCode);
-        document.getElementById("edit-name").value = stu.name; document.getElementById("edit-room").value = stu.room;
-        document.getElementById("edit-date").value = stu.feeValidTill; document.getElementById("edit-status").value = stu.status;
-        document.getElementById("edit-popup").style.display = "flex";
-    }
-    function closeEditPopup() { document.getElementById("edit-popup").style.display = "none"; }
-    
-    async function updateProfile() {
-        let uName = document.getElementById("edit-name").value, uRoom = document.getElementById("edit-room").value, uDate = document.getElementById("edit-date").value, uStatus = document.getElementById("edit-status").value;
-        await db.collection("students").doc(currentActiveCode).update({ name: uName, room: uRoom, feeValidTill: uDate, status: uStatus });
-        closeEditPopup(); openProfile(currentActiveCode); 
-    }
-
-    async function deleteStudent() {
-        if(confirm("⚠️ Pura record DELETE karna chahte hain?")) {
-            await db.collection("students").doc(currentActiveCode).delete();
-            closeEditPopup(); closeProfile();
+    function closeMealsSheet() {
+        // If we close it manually via button, we should also pop the state
+        if(history.state && history.state.modal === 'meals') {
+            history.back();
+        } else {
+            document.getElementById('meals-sheet').classList.remove('active');
         }
     }
 
-    function isDatePaused(dateStr, stu) {
-        let d = new Date(dateStr);
-        if(stu.lastPauseDate && d >= new Date(stu.lastPauseDate)) return true;
-        if(stu.pauseHistory) { for(let h of stu.pauseHistory) { if(d >= new Date(h.start) && d < new Date(h.end)) return true; } }
-        return false;
-    }
+    // Listen for Android Back Button
+    window.addEventListener('popstate', function(event) {
+        // This fires when back button is pressed. We just close the modal.
+        document.getElementById('meals-sheet').classList.remove('active');
+    });
 
-    async function loadCalendar(code, stu) {
-        const calBody = document.getElementById("cal-body"); calBody.innerHTML = "Fetching...";
-        let todayDate = new Date(), year = todayDate.getFullYear(), month = String(todayDate.getMonth() + 1).padStart(2, '0'), daysInMonth = todayDate.getDate(); 
-        let logs = {};
-        const snap = await db.collection("attendance").where("code", "==", code).get();
-
-        snap.forEach(doc => { let d = doc.data(); if(d.date.startsWith(`${year}-${month}`)) { if(!logs[d.date]) logs[d.date] = {}; logs[d.date][d.meal.toLowerCase()] = {isDue: d.isDue}; } });
-
-        let html = "";
-        for(let i = daysInMonth; i >= 1; i--) {
-            let dateStr = `${year}-${month}-${String(i).padStart(2, '0')}`;
-            let dLog = logs[dateStr] || {}, isP = isDatePaused(dateStr, stu);
-            
-            let formatMeal = (mCode, label) => {
-                if(dLog[mCode]) return dLog[mCode].isDue ? `due">⚠️ ${label}` : `yes">✔ ${label}`;
-                return isP ? `pause">⏸ ${label}` : `no">❌ ${label}`;
-            };
-
-            let b = formatMeal('breakfast', 'B'), l = formatMeal('lunch', 'L'), d = formatMeal('dinner', 'D');
-            let dateDisplay = new Date(dateStr).toLocaleDateString('en-US', {month:'short', day:'numeric'});
-            html += `<div class="cal-row"><div class="cal-date">${dateDisplay}</div><div class="meal-dots"><div class="dot ${b}</div><div class="dot ${l}</div><div class="dot ${d}</div></div></div>`;
-        }
-        calBody.innerHTML = html;
-    }
 </script>
 </body>
 </html>
