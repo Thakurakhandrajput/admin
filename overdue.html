@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBC Mess - Overdue List</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --danger: #FF3B30; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 40px; }
+
+        /* HEADER */
+        .header { padding: 30px 20px 20px 20px; display: flex; align-items: center; gap: 15px; }
+        .btn-back { font-size: 24px; font-weight: bold; color: var(--text-main); text-decoration: none; padding: 5px; }
+        .header p { margin: 0; font-size: 12px; color: var(--danger); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .header h1 { margin: 2px 0 0 0; font-size: 28px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px;}
+
+        /* SEARCH BAR */
+        .search-container { padding: 0 20px; margin-bottom: 20px; }
+        .search-box { width: 100%; padding: 14px 20px; border-radius: 16px; border: none; background: #e3e3e8; outline: none; font-size: 16px; font-weight: 500; color: var(--text-main); transition: 0.2s; }
+        .search-box:focus { background: #fff; box-shadow: 0 0 0 2px var(--danger); }
+
+        /* DIRECTORY LIST */
+        .list-container { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+        .list-item { background: var(--card-bg); border-radius: 20px; padding: 16px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); cursor: pointer; text-decoration: none; color: inherit; border: 1px solid rgba(255, 59, 48, 0.1);}
+        .list-item:active { transform: scale(0.97); }
+        .list-avatar { width: 50px; height: 50px; border-radius: 14px; object-fit: cover; margin-right: 15px; }
+        .list-info { flex: 1; }
+        .list-info h4 { margin: 0; font-size: 17px; font-weight: 700; }
+        .list-info p { margin: 3px 0 0 0; font-size: 13px; color: var(--text-muted); font-weight: 500;}
+        .badge { padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--danger); background: rgba(255, 59, 48, 0.15); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="index.html" class="btn-back">❮</a>
+        <div>
+            <p>Action Required</p>
+            <h1>Overdue List</h1>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="search-box" class="search-box" placeholder="🔍 Search Defaulters..." onkeyup="filterList()">
+    </div>
+    
+    <div class="list-container" id="student-list">
+        <div style="text-align:center; padding: 20px; color:#888; font-weight:600;">Loading Overdue Students...</div>
+    </div>
+
+<script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE",
+      authDomain: "obc-mess-system.firebaseapp.com",
+      projectId: "obc-mess-system",
+      storageBucket: "obc-mess-system.firebasestorage.app",
+      messagingSenderId: "501219370424",
+      appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    let overdueStudents = [];
+
+    auth.onAuthStateChanged((user) => {
+        if (!user) window.location.href = "index.html"; 
+        else loadOverdueData();
+    });
+
+    function getDaysLeft(dateStr) {
+        let today = new Date(); today.setHours(0,0,0,0);
+        let target = new Date(dateStr);
+        return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function loadOverdueData() {
+        db.collection("students").onSnapshot((snap) => {
+            overdueStudents = [];
+            snap.forEach(doc => {
+                let data = doc.data();
+                let days = getDaysLeft(data.feeValidTill);
+                
+                // Show ONLY those who are 'fee_due' or days < 0 (and not banned)
+                if ((days < 0 || data.status === 'fee_due') && data.status !== 'banned') {
+                    // Force update status if not updated yet
+                    if(data.status !== 'fee_due') {
+                        db.collection("students").doc(data.code).update({status: 'fee_due'});
+                        data.status = 'fee_due';
+                    }
+                    data.daysLeft = days; // Save days to show "Expired by X days"
+                    overdueStudents.push(data);
+                }
+            });
+            renderList(overdueStudents);
+        });
+    }
+
+    function renderList(list) {
+        const container = document.getElementById("student-list");
+        container.innerHTML = "";
+        
+        if(list.length === 0) {
+            container.innerHTML = `<div style="text-align:center; padding: 20px; color:#34C759; font-weight:700; font-size: 18px;">🎉 Zero Overdue Students!</div>`;
+            return;
+        }
+
+        list.forEach(stu => {
+            let daysPast = Math.abs(stu.daysLeft);
+            container.innerHTML += `
+                <a href="profile.html?code=${stu.code}" class="list-item">
+                    <img src="${stu.photo}" class="list-avatar">
+                    <div class="list-info">
+                        <h4>${stu.name}</h4>
+                        <p>Code: ${stu.code} • Room: ${stu.room}</p>
+                    </div>
+                    <div><span class="badge">Due: ${daysPast} Days</span></div>
+                </a>`;
+        });
+    }
+
+    function filterList() {
+        let q = document.getElementById("search-box").value.toLowerCase();
+        renderList(overdueStudents.filter(s => s.name.toLowerCase().includes(q) || s.code.includes(q)));
+    }
+</script>
+</body>
+</html>
