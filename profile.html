@@ -28,6 +28,7 @@
         .badge-main { display: inline-block; padding: 8px 20px; background: #1c1c1e; color: #fff; border-radius: 20px; font-weight: 700; font-size: 14px; margin-bottom: 20px; }
         .expired { background: var(--danger); } 
         .paused-badge { background: var(--primary); }
+        .guest-badge { background: var(--warning); color: #fff;}
 
         /* BUTTON ROW */
         .action-buttons { display: flex; gap: 10px; padding: 0 20px; justify-content: center; }
@@ -36,7 +37,7 @@
         .btn-history { flex: 1; background: #1c1c1e; color: #fff; border: none; padding: 16px 10px; border-radius: 16px; font-weight: 700; cursor: pointer; font-size: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); transition: 0.2s;}
         .btn-history:active { transform: scale(0.97); }
 
-        /* ================= CALENDAR ================= */
+        /* ================= CALENDAR & LIST ================= */
         .calendar-card { background: var(--card-bg); margin: 20px; border-radius: 24px; padding: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.03); }
         .cal-title { font-size: 16px; font-weight: 800; margin-bottom: 15px; color: var(--text-main); }
         .cal-row { display: flex; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f0f0f0; align-items: center; }
@@ -47,6 +48,8 @@
         .dot.no { background: rgba(255, 59, 48, 0.15); color: var(--danger); }
         .dot.pause { background: rgba(0, 122, 255, 0.15); color: var(--primary); } 
         .dot.due { background: rgba(255, 152, 0, 0.15); color: #ff9800; }
+
+        .guest-meal-item { background: #f9f9f9; padding: 15px 18px; border-radius: 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #f0f0f0; }
 
         /* ================= BOTTOM SHEETS ================= */
         .bottom-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(3px);}
@@ -84,7 +87,7 @@
         .pay-card { background:#f9f9f9; padding:18px; border-radius:18px; margin-bottom:12px; border:1px solid #f0f0f0; }
         .pay-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
         .pay-amt { font-size: 20px; font-weight: 800; color: var(--success); }
-        .pay-amt-neg { font-size: 20px; font-weight: 800; color: var(--danger); } /* Red for negative amounts */
+        .pay-amt-neg { font-size: 20px; font-weight: 800; color: var(--danger); } 
         .pay-mode { font-size: 12px; font-weight: 700; background: #e5e5ea; padding: 4px 10px; border-radius: 8px; color: var(--text-main); text-transform: uppercase;}
         .pay-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 5px; }
         .pay-row strong { color: var(--text-main); }
@@ -93,7 +96,7 @@
 <body>
 
     <div class="header" id="profile-header" style="display: none;">
-        <a href="index.html" class="btn-back">❮</a>
+        <a href="#" id="back-button" class="btn-back">❮</a>
         <div class="btn-edit" onclick="openSheet('edit-sheet')">✏️</div>
         
         <img id="prof-img" class="profile-pic" src="">
@@ -109,13 +112,13 @@
     </div>
 
     <div class="calendar-card">
-        <div class="cal-title">📅 Meal History (This Month)</div>
+        <div id="cal-title" class="cal-title">📅 Meal History (This Month)</div>
         <div id="cal-body">
             <div style="text-align:center; padding: 20px; color:#888;">Fetching...</div>
         </div>
     </div>
 
-    <!-- PREMIUM EDIT POPUP (Bottom Sheet) -->
+    <!-- EDIT POPUP (Bottom Sheet) -->
     <div id="edit-sheet" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'edit-sheet')">
         <div class="bottom-sheet" id="edit-sheet-content">
             <div class="sheet-header" id="edit-header">
@@ -137,7 +140,7 @@
                     </div>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" id="status-group">
                     <label>Account Status</label>
                     <select id="edit-status">
                         <option value="active">🟢 Active</option>
@@ -173,7 +176,7 @@
                 </div>
                 
                 <button type="button" class="btn-main" id="btn-save" onclick="updateProfile()">💾 Save Changes</button>
-                <button type="button" class="btn-main btn-danger" id="btn-del" onclick="deleteStudent()">🗑️ Delete Student</button>
+                <button type="button" class="btn-main btn-danger" id="btn-del" onclick="deleteStudent()">🗑️ Delete Record</button>
             </div>
         </div>
     </div>
@@ -201,9 +204,9 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentCode = urlParams.get('code');
     let globalStudentData = null;
-    let originalFeeDate = null; // Smart Check variable
+    let originalFeeDate = null; 
 
-    if(!currentCode) { alert("No student selected!"); window.location.replace("index.html"); }
+    if(!currentCode) { alert("No profile selected!"); window.location.replace("index.html"); }
 
     auth.onAuthStateChanged((user) => { if (!user) window.location.replace("login.html"); else loadProfile(); });
 
@@ -211,6 +214,15 @@
         let today = new Date(); today.setHours(0,0,0,0);
         let target = new Date(dateStr);
         return Math.ceil((target - target.getTimezoneOffset()*60000 - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function formatPassType(type) {
+        const map = {
+            'meal_breakfast': '🍽️ Breakfast Pass', 'meal_lunch': '🍽️ Lunch Pass', 'meal_dinner': '🍽️ Dinner Pass',
+            '2meals': '🍽️ 2 Meals Pass', '1day': '📅 1 Day Pass', '2days': '📅 2 Days Pass', '3days': '📅 3 Days Pass',
+            'custom': '⚙️ Custom Pass', 'regular': 'Regular'
+        };
+        return map[type] || 'Guest Pass';
     }
 
     function loadProfile() {
@@ -223,35 +235,56 @@
             document.getElementById("profile-header").style.display = "block";
             document.getElementById("prof-img").src = stu.photo; 
             document.getElementById("prof-name").innerText = stu.name; 
-            document.getElementById("prof-room").innerText = `Room: ${stu.room} | Code: ${stu.code}`;
             
-            let days = getDaysLeft(stu.feeValidTill);
             let badge = document.getElementById("prof-days");
             let pBtn = document.getElementById("btn-pause");
-            
-            if(stu.status === 'banned') { 
-                badge.innerText = `BANNED`; badge.className = "badge-main expired"; pBtn.style.display="none";
-            } else if(stu.status === 'paused') { 
-                badge.innerText = `PAUSED (On Leave)`; badge.className = "badge-main paused-badge"; 
-                pBtn.style.display="block"; pBtn.innerText="▶️ Resume"; pBtn.style.background="var(--success)"; 
-            } else { 
-                if(days >= 0) {
-                    badge.innerText = `${days} Days Left`; badge.className = "badge-main";
+
+            // 🔥 SMART ROUTING: Guest or Regular
+            if(stu.isGuest) {
+                // GUEST UI
+                document.getElementById("prof-room").innerText = `Code: ${stu.code}  |  ${formatPassType(stu.passType)}`;
+                document.getElementById("back-button").href = "guest.html"; // Go back to guest list
+                
+                pBtn.style.display = "none"; // Guests can't pause
+                document.getElementById("status-group").style.display = "none"; // Hide status dropdown in edit for guests
+                document.getElementById("cal-title").innerText = "🍽️ Meals Consumed Checklist";
+                
+                let days = getDaysLeft(stu.feeValidTill);
+                if(days < 0) {
+                    badge.innerText = `PASS EXPIRED`; badge.className = "badge-main expired";
+                } else if(days === 0) {
+                    badge.innerText = `VALID TODAY ONLY`; badge.className = "badge-main guest-badge";
                 } else {
-                    badge.innerText = `Expired (Due: ${Math.abs(days)} Days)`; badge.className = "badge-main expired";
+                    badge.innerText = `VALID FOR ${days} DAYS`; badge.className = "badge-main guest-badge";
                 }
-                pBtn.style.display="block"; pBtn.innerText="⏸️ Pause"; pBtn.style.background="var(--primary)"; 
+
+            } else {
+                // REGULAR STUDENT UI
+                document.getElementById("prof-room").innerText = `Room: ${stu.room}  |  Code: ${stu.code}`;
+                document.getElementById("back-button").href = "index.html"; // Go back to main list
+                document.getElementById("cal-title").innerText = "📅 Meal History (This Month)";
+
+                let days = getDaysLeft(stu.feeValidTill);
+                if(stu.status === 'banned') { 
+                    badge.innerText = `BANNED`; badge.className = "badge-main expired"; pBtn.style.display="none";
+                } else if(stu.status === 'paused') { 
+                    badge.innerText = `PAUSED (On Leave)`; badge.className = "badge-main paused-badge"; 
+                    pBtn.style.display="block"; pBtn.innerText="▶️ Resume"; pBtn.style.background="var(--success)"; 
+                } else { 
+                    if(days >= 0) { badge.innerText = `${days} Days Left`; badge.className = "badge-main"; } 
+                    else { badge.innerText = `Expired (Due: ${Math.abs(days)} Days)`; badge.className = "badge-main expired"; }
+                    pBtn.style.display="block"; pBtn.innerText="⏸️ Pause"; pBtn.style.background="var(--primary)"; 
+                }
             }
 
             loadCalendar(stu);
         });
     }
 
-    // PAUSE LOGIC
+    // PAUSE LOGIC (Only for Regular Students)
     async function togglePause() {
         let stu = globalStudentData;
-        let today = new Date();
-        let todayStr = today.toISOString().split('T')[0];
+        let today = new Date(); let todayStr = today.toISOString().split('T')[0];
         let pBtn = document.getElementById("btn-pause");
         pBtn.innerText = "⏳ Wait...";
 
@@ -278,7 +311,6 @@
     function handleDateChange() {
         let oldDate = new Date(originalFeeDate);
         let newDate = new Date(document.getElementById("edit-date").value);
-        
         let diffTime = newDate.getTime() - oldDate.getTime();
         let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
         
@@ -286,23 +318,15 @@
         let info = document.getElementById("extension-info");
         
         if(diffDays > 0) {
-            // DATE EXTENDED (Green)
-            paySec.style.display = "block";
-            paySec.style.border = "2px dashed var(--success)";
-            paySec.style.background = "rgba(52, 199, 89, 0.05)";
+            paySec.style.display = "block"; paySec.style.border = "2px dashed var(--success)"; paySec.style.background = "rgba(52, 199, 89, 0.05)";
             info.innerHTML = `📈 Extended by ${diffDays} Days <span style="font-size:11px; font-weight:600; color:#888; display:block;">(Enter Payment Received)</span>`;
             info.style.color = "var(--success)";
         } else if(diffDays < 0) {
-            // DATE REDUCED (Red)
-            paySec.style.display = "block";
-            paySec.style.border = "2px dashed var(--danger)";
-            paySec.style.background = "rgba(255, 59, 48, 0.05)";
+            paySec.style.display = "block"; paySec.style.border = "2px dashed var(--danger)"; paySec.style.background = "rgba(255, 59, 48, 0.05)";
             info.innerHTML = `📉 Reduced by ${Math.abs(diffDays)} Days <span style="font-size:11px; font-weight:600; color:#888; display:block;">(Amount will be saved as Deduction/Refund)</span>`;
             info.style.color = "var(--danger)";
         } else {
-            // SAME DATE (Hidden)
-            paySec.style.display = "none";
-            document.getElementById("edit-pay-amt").value = "";
+            paySec.style.display = "none"; document.getElementById("edit-pay-amt").value = "";
         }
     }
 
@@ -310,13 +334,12 @@
     function openSheet(id) {
         if(id === 'edit-sheet') {
             let stu = globalStudentData;
-            originalFeeDate = stu.feeValidTill; // Store original date for comparison
+            originalFeeDate = stu.feeValidTill; 
             document.getElementById("edit-name").value = stu.name; 
             document.getElementById("edit-room").value = stu.room;
             document.getElementById("edit-date").value = stu.feeValidTill; 
-            document.getElementById("edit-status").value = stu.status;
+            if(!stu.isGuest) document.getElementById("edit-status").value = stu.status;
             
-            // Reset Payment Section UI
             document.getElementById("payment-section").style.display = "none";
             document.getElementById("edit-pay-amt").value = ""; 
         }
@@ -366,8 +389,7 @@
             let sd = new Date(globalStudentData.startDate || new Date());
             hist.push({
                 dateAdded: globalStudentData.startDate || new Date().toISOString().split('T')[0],
-                day: sd.toLocaleDateString('en-US', {weekday: 'long'}),
-                amount: globalStudentData.paymentAmount, mode: globalStudentData.paymentMode || 'Cash', validTill: globalStudentData.feeValidTill
+                day: sd.toLocaleDateString('en-US', {weekday: 'long'}), amount: globalStudentData.paymentAmount, mode: globalStudentData.paymentMode || 'Cash', validTill: globalStudentData.feeValidTill
             });
         }
 
@@ -381,9 +403,7 @@
                 let d = new Date(p.dateAdded); let dateFormatted = d.toLocaleDateString('en-US', {day:'2-digit', month:'short', year:'numeric'});
                 let v = new Date(p.validTill); let validFormatted = v.toLocaleDateString('en-US', {day:'2-digit', month:'short', year:'numeric'});
                 
-                // Color Code Negative vs Positive Amount
-                let amtValue = parseInt(p.amount);
-                let amtClass = amtValue >= 0 ? "pay-amt" : "pay-amt-neg";
+                let amtValue = parseInt(p.amount); let amtClass = amtValue >= 0 ? "pay-amt" : "pay-amt-neg";
                 let amtDisplay = amtValue >= 0 ? `+₹${amtValue}` : `-₹${Math.abs(amtValue)}`;
 
                 container.innerHTML += `
@@ -393,14 +413,14 @@
                             <span class="pay-mode">${p.mode}</span>
                         </div>
                         <div class="pay-row"><span>Date Logged:</span> <strong>${dateFormatted} (${p.day})</strong></div>
-                        <div class="pay-row"><span>Extended Till:</span> <strong>${validFormatted}</strong></div>
+                        <div class="pay-row"><span>Valid Till:</span> <strong>${validFormatted}</strong></div>
                     </div>`;
             });
         }
         openSheet('payment-sheet');
     }
 
-    // --- UPDATE PROFILE & SMART PAYMENT LOGIC ---
+    // --- UPDATE PROFILE ---
     function previewFile(inputId, displayId) { let file = document.getElementById(inputId).files[0]; if(file) document.getElementById(displayId).innerText = "✅ " + file.name; }
     function compressImage(file) {
         return new Promise((resolve) => {
@@ -423,7 +443,7 @@
 
         try {
             let uName = document.getElementById("edit-name").value, uRoom = document.getElementById("edit-room").value;
-            let uDate = document.getElementById("edit-date").value, uStatus = document.getElementById("edit-status").value;
+            let uDate = document.getElementById("edit-date").value;
             let payAmt = document.getElementById("edit-pay-amt").value, payMode = document.getElementById("edit-pay-mode").value;
             
             let finalPhoto = globalStudentData.photo; 
@@ -438,21 +458,15 @@
 
             if(diffDays !== 0 && payAmt && parseInt(payAmt) !== 0) {
                 let finalAmt = parseInt(payAmt);
-                // IF REDUCED -> Force Negative Amount
-                if(diffDays < 0) { finalAmt = -Math.abs(finalAmt); } 
-                else { finalAmt = Math.abs(finalAmt); }
-
+                if(diffDays < 0) { finalAmt = -Math.abs(finalAmt); } else { finalAmt = Math.abs(finalAmt); }
                 let today = new Date();
-                hist.push({ 
-                    dateAdded: today.toISOString().split('T')[0], 
-                    day: today.toLocaleDateString('en-US', {weekday: 'long'}), 
-                    amount: finalAmt.toString(), 
-                    mode: payMode, 
-                    validTill: uDate 
-                });
+                hist.push({ dateAdded: today.toISOString().split('T')[0], day: today.toLocaleDateString('en-US', {weekday: 'long'}), amount: finalAmt.toString(), mode: payMode, validTill: uDate });
             }
             
-            await db.collection("students").doc(currentCode).update({ name: uName, room: uRoom, feeValidTill: uDate, status: uStatus, photo: finalPhoto, paymentHistory: hist });
+            let updateData = { name: uName, room: uRoom, feeValidTill: uDate, photo: finalPhoto, paymentHistory: hist };
+            if(!globalStudentData.isGuest) { updateData.status = document.getElementById("edit-status").value; }
+
+            await db.collection("students").doc(currentCode).update(updateData);
             closeSheet('edit-sheet'); 
         } catch(error) {
             alert("❌ Failed to update: " + error.message);
@@ -462,10 +476,14 @@
     }
 
     async function deleteStudent() {
-        if(confirm("⚠️ WARNING: Kya aap sach mein is student ka pura record DELETE karna chahte hain?")) {
+        if(confirm("⚠️ WARNING: Kya aap sach mein is profile ko DELETE karna chahte hain?")) {
             document.getElementById("btn-del").innerText = "🗑️ Deleting...";
-            try { await db.collection("students").doc(currentCode).delete(); window.location.replace("index.html"); } 
-            catch(error) { alert("❌ Delete Error: " + error.message); document.getElementById("btn-del").innerText = "🗑️ Delete Student"; }
+            try { 
+                await db.collection("students").doc(currentCode).delete(); 
+                if(globalStudentData.isGuest) window.location.replace("guest.html"); 
+                else window.location.replace("index.html"); 
+            } 
+            catch(error) { alert("❌ Delete Error: " + error.message); document.getElementById("btn-del").innerText = "🗑️ Delete Record"; }
         }
     }
 
@@ -477,19 +495,43 @@
     }
 
     async function loadCalendar(stu) {
-        let todayDate = new Date(), year = todayDate.getFullYear(), month = String(todayDate.getMonth() + 1).padStart(2, '0'), daysInMonth = todayDate.getDate(); 
-        let logs = {};
         const snap = await db.collection("attendance").where("code", "==", stu.code).get();
-
-        snap.forEach(doc => { 
-            let d = doc.data(); 
-            if(d.date.startsWith(`${year}-${month}`)) { if(!logs[d.date]) logs[d.date] = {}; logs[d.date][d.meal.toLowerCase()] = {isDue: d.isDue}; } 
-        });
+        let logsArray = [];
+        snap.forEach(doc => logsArray.push(doc.data()));
 
         let html = "";
+
+        // 🔥 GUEST MEAL LIST (No Calendar)
+        if(stu.isGuest) {
+            if(logsArray.length === 0) {
+                html = "<div style='text-align:center; padding: 20px; color:#888;'>No meals consumed yet.</div>";
+            } else {
+                // Sort latest first manually (without needing firestore index)
+                logsArray.sort((a,b) => new Date(b.date) - new Date(a.date));
+                logsArray.forEach(d => {
+                    let dateFormatted = new Date(d.date).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+                    let mealIcon = d.meal === 'Breakfast' ? '🌅' : (d.meal === 'Lunch' ? '☀️' : '🌙');
+                    html += `
+                        <div class="guest-meal-item">
+                            <div style="font-weight:700; font-size:16px; color:var(--text-main);">${mealIcon} ${d.meal}</div>
+                            <div style="color:var(--text-muted); font-size:13px; font-weight:700;">${dateFormatted}</div>
+                        </div>`;
+                });
+            }
+            document.getElementById("cal-body").innerHTML = html;
+            return;
+        }
+
+        // 🔥 REGULAR STUDENT CALENDAR
+        let todayDate = new Date(), year = todayDate.getFullYear(), month = String(todayDate.getMonth() + 1).padStart(2, '0'), daysInMonth = todayDate.getDate(); 
+        let logsMap = {};
+        logsArray.forEach(d => { 
+            if(d.date.startsWith(`${year}-${month}`)) { if(!logsMap[d.date]) logsMap[d.date] = {}; logsMap[d.date][d.meal.toLowerCase()] = {isDue: d.isDue}; } 
+        });
+
         for(let i = daysInMonth; i >= 1; i--) {
             let dateStr = `${year}-${month}-${String(i).padStart(2, '0')}`;
-            let dLog = logs[dateStr] || {}, isP = isDatePaused(dateStr, stu);
+            let dLog = logsMap[dateStr] || {}, isP = isDatePaused(dateStr, stu);
             
             let formatMeal = (mCode, label) => {
                 if(dLog[mCode]) return dLog[mCode].isDue ? `due">⚠️ ${label}` : `yes">✔ ${label}`;
