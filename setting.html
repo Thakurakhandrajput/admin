@@ -9,20 +9,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
-        :root {
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-main: #1d1d1f;
-            --text-muted: #86868b;
-            --primary: #007AFF;
-            --danger: #FF3B30;
-            --success: #34C759;
-            --warning: #FF9500;
-        }
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --danger: #FF3B30; --success: #34C759; --warning: #FF9500; }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 95px; }
 
-        /* 🔥 Scroll Lock jab koi popup active ho */
         body.modal-open { overflow: hidden; overscroll-behavior-y: none; }
 
         .header { padding: 30px 20px 20px 20px; text-align: center; }
@@ -38,12 +28,12 @@
         .setting-item span { font-size: 16px; font-weight: 600; color: var(--text-main); }
         .setting-icon { padding: 10px; border-radius: 12px; font-size: 18px; margin-right: 14px; display: inline-flex; justify-content: center; align-items: center; width: 40px; height: 40px; }
 
-        /* Icon Variants */
         .icon-blue { background: rgba(0, 122, 255, 0.1); color: var(--primary); }
         .icon-green { background: rgba(52, 199, 89, 0.12); color: var(--success); }
         .icon-purple { background: rgba(175, 82, 222, 0.12); color: #af52de; }
         .icon-orange { background: rgba(255, 149, 0, 0.12); color: var(--warning); }
         .icon-red { background: rgba(255, 59, 48, 0.1); color: var(--danger); }
+        .icon-dark { background: rgba(0, 0, 0, 0.08); color: #333; }
 
         /* BOTTOM NAV */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-around; padding: 15px 0 25px 0; z-index: 100; }
@@ -54,15 +44,12 @@
         /* ================= BOTTOM SHEETS ================= */
         .bottom-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(3px); }
         .bottom-sheet-overlay.active { opacity: 1; visibility: visible; }
-
         .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 0 0 25px 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; max-height: 88vh; display: flex; flex-direction: column; }
         .bottom-sheet-overlay.active .bottom-sheet { transform: translateY(0); }
-
         .sheet-header { padding: 15px 25px 12px 25px; background: var(--card-bg); border-radius: 30px 30px 0 0; position: sticky; top: 0; z-index: 10; touch-action: none; border-bottom: 1px solid rgba(0,0,0,0.05); }
         .drag-handle-area { width: 100%; height: 18px; display: flex; justify-content: center; align-items: flex-start; cursor: grab; }
         .drag-handle { width: 45px; height: 5px; background: #d1d1d6; border-radius: 5px; }
         .sheet-title { font-size: 20px; font-weight: 800; text-align: center; color: var(--text-main); margin: 4px 0 0 0; }
-
         .sheet-content { padding: 18px 25px; overflow-y: auto; flex-grow: 1; overscroll-behavior: contain; }
 
         .input-group { margin-bottom: 15px; }
@@ -72,7 +59,6 @@
 
         .btn-main { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 8px; box-shadow: 0 8px 20px rgba(0,122,255,0.25); }
         .btn-main:active { transform: scale(0.97); }
-
         .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     </style>
 </head>
@@ -86,10 +72,19 @@
     <!-- SECTION 1: OPERATIONS & DATA -->
     <div class="section-label">Operations & Tools</div>
     <div class="form-card">
+        <!-- 🔥 NEW: Download Financial Invoice -->
+        <div class="setting-item" onclick="downloadFinancialInvoice()">
+            <div style="display:flex; align-items:center;">
+                <span class="setting-icon icon-dark">🧾</span>
+                <span>Download Financial Invoice</span>
+            </div>
+            <span style="color:#c7c7cc; font-weight:bold;">❯</span>
+        </div>
+
         <div class="setting-item" onclick="downloadMonthlyReport()">
             <div style="display:flex; align-items:center;">
                 <span class="setting-icon icon-green">📊</span>
-                <span>Download Monthly Report</span>
+                <span>Attendance Monthly Report</span>
             </div>
             <span style="color:#c7c7cc; font-weight:bold;">❯</span>
         </div>
@@ -164,19 +159,10 @@
     <!-- ================= 1. CHANGE PASSWORD SHEET ================= -->
     <div id="sheet-password" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'sheet-password')">
         <div class="bottom-sheet" id="sheet-password-content">
-            <div class="sheet-header" id="hdr-password">
-                <div class="drag-handle-area"><div class="drag-handle"></div></div>
-                <div class="sheet-title">Update Password</div>
-            </div>
+            <div class="sheet-header" id="hdr-password"><div class="drag-handle-area"><div class="drag-handle"></div></div><div class="sheet-title">Update Password</div></div>
             <div class="sheet-content">
-                <div class="input-group">
-                    <label>Current Password</label>
-                    <input type="password" id="old-pass" placeholder="Enter Old Password">
-                </div>
-                <div class="input-group">
-                    <label>New Password</label>
-                    <input type="password" id="new-pass" placeholder="Minimum 6 characters">
-                </div>
+                <div class="input-group"><label>Current Password</label><input type="password" id="old-pass" placeholder="Enter Old Password"></div>
+                <div class="input-group"><label>New Password</label><input type="password" id="new-pass" placeholder="Minimum 6 characters"></div>
                 <button class="btn-main" id="btn-update-pass" onclick="updatePassword()">Save New Password</button>
             </div>
         </div>
@@ -185,37 +171,12 @@
     <!-- ================= 2. UPDATE MESS TIMINGS SHEET ================= -->
     <div id="sheet-timings" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'sheet-timings')">
         <div class="bottom-sheet" id="sheet-timings-content">
-            <div class="sheet-header" id="hdr-timings">
-                <div class="drag-handle-area"><div class="drag-handle"></div></div>
-                <div class="sheet-title">Update Mess Timings</div>
-            </div>
+            <div class="sheet-header" id="hdr-timings"><div class="drag-handle-area"><div class="drag-handle"></div></div><div class="sheet-title">Update Mess Timings</div></div>
             <div class="sheet-content">
                 <p style="margin: 0 0 15px 0; font-size:13px; color:var(--text-muted);">Configure 24-hour window for each meal slot:</p>
-                
-                <div class="input-group">
-                    <label>Breakfast Window</label>
-                    <div class="time-grid">
-                        <input type="number" id="t-b-start" min="0" max="23" placeholder="From (e.g. 8)">
-                        <input type="number" id="t-b-end" min="0" max="23" placeholder="To (e.g. 10)">
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label>Lunch Window</label>
-                    <div class="time-grid">
-                        <input type="number" id="t-l-start" min="0" max="23" placeholder="From (e.g. 13)">
-                        <input type="number" id="t-l-end" min="0" max="23" placeholder="To (e.g. 15)">
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label>Dinner Window</label>
-                    <div class="time-grid">
-                        <input type="number" id="t-d-start" min="0" max="23" placeholder="From (e.g. 20)">
-                        <input type="number" id="t-d-end" min="0" max="23" placeholder="To (e.g. 22)">
-                    </div>
-                </div>
-
+                <div class="input-group"><label>Breakfast Window</label><div class="time-grid"><input type="number" id="t-b-start" placeholder="From (e.g. 8)"><input type="number" id="t-b-end" placeholder="To (e.g. 10)"></div></div>
+                <div class="input-group"><label>Lunch Window</label><div class="time-grid"><input type="number" id="t-l-start" placeholder="From (e.g. 13)"><input type="number" id="t-l-end" placeholder="To (e.g. 15)"></div></div>
+                <div class="input-group"><label>Dinner Window</label><div class="time-grid"><input type="number" id="t-d-start" placeholder="From (e.g. 20)"><input type="number" id="t-d-end" placeholder="To (e.g. 22)"></div></div>
                 <button class="btn-main" id="btn-save-timings" onclick="saveTimings()">Save Mess Timings</button>
             </div>
         </div>
@@ -224,16 +185,9 @@
     <!-- ================= 3. GATEKEEPER PIN SHEET ================= -->
     <div id="sheet-pin" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'sheet-pin')">
         <div class="bottom-sheet" id="sheet-pin-content">
-            <div class="sheet-header" id="hdr-pin">
-                <div class="drag-handle-area"><div class="drag-handle"></div></div>
-                <div class="sheet-title">Gate Terminal PIN</div>
-            </div>
+            <div class="sheet-header" id="hdr-pin"><div class="drag-handle-area"><div class="drag-handle"></div></div><div class="sheet-title">Gate Terminal PIN</div></div>
             <div class="sheet-content">
-                <p style="margin: 0 0 15px 0; font-size:13px; color:var(--text-muted);">Set the password/PIN required on the gate terminal:</p>
-                <div class="input-group">
-                    <label>Gate Security PIN / Code</label>
-                    <input type="text" id="gate-new-pin" placeholder="e.g. 1234 or Gate@2026">
-                </div>
+                <div class="input-group"><label>Gate Security PIN / Code</label><input type="text" id="gate-new-pin" placeholder="e.g. 1234 or Gate@2026"></div>
                 <button class="btn-main" id="btn-save-pin" onclick="saveGatePin()">Update Gate PIN</button>
             </div>
         </div>
@@ -242,26 +196,14 @@
     <!-- ================= 4. BULK EXPIRY EXTENSION SHEET ================= -->
     <div id="sheet-bulk-extend" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'sheet-bulk-extend')">
         <div class="bottom-sheet" id="sheet-bulk-extend-content">
-            <div class="sheet-header" id="hdr-bulk">
-                <div class="drag-handle-area"><div class="drag-handle"></div></div>
-                <div class="sheet-title">Bulk Expiry Extension</div>
-            </div>
+            <div class="sheet-header" id="hdr-bulk"><div class="drag-handle-area"><div class="drag-handle"></div></div><div class="sheet-title">Bulk Expiry Extension</div></div>
             <div class="sheet-content">
                 <p style="margin: 0 0 15px 0; font-size:13px; color:var(--text-muted);">Mess bandh rehne par sabhi active baccho ki validity aage badhayein:</p>
-                
-                <div class="input-group">
-                    <label>Days to Add</label>
-                    <input type="number" id="bulk-days-input" min="1" max="30" placeholder="e.g. 3">
-                </div>
-
+                <div class="input-group"><label>Days to Add</label><input type="number" id="bulk-days-input" min="1" max="30" placeholder="e.g. 3"></div>
                 <div class="input-group">
                     <label>Target Students</label>
-                    <select id="bulk-target-status">
-                        <option value="active">Active Students Only</option>
-                        <option value="all">Active + Paused Students</option>
-                    </select>
+                    <select id="bulk-target-status"><option value="active">Active Students Only</option><option value="all">Active + Paused Students</option></select>
                 </div>
-
                 <button class="btn-main" id="btn-bulk-extend" onclick="executeBulkExtension()">Extend Validity Now</button>
             </div>
         </div>
@@ -279,66 +221,22 @@
     });
 
     function logoutFirebase() {
-        if(confirm("Are you sure you want to log out?")) {
-            auth.signOut().then(() => window.location.replace("login.html"));
-        }
+        if(confirm("Are you sure you want to log out?")) { auth.signOut().then(() => window.location.replace("login.html")); }
     }
 
-    // --- BOTTOM SHEET ENGINE (SWIPE + CLICK OUTSIDE + SCROLL LOCK) ---
-    function openSheet(id) { 
-        history.pushState({ modal: id }, id, "#" + id); 
-        document.getElementById(id).classList.add('active'); 
-        document.body.classList.add('modal-open');
-    }
-    
-    function closeSheet(id) {
-        if(history.state && history.state.modal === id) { history.back(); } 
-        else { 
-            document.getElementById(id).classList.remove('active'); 
-            document.body.classList.remove('modal-open'); 
-        }
-    }
-    
-    function closeSheetOutside(e, id) {
-        if(e.target.id === id) { closeSheet(id); }
-    }
-
-    window.addEventListener('popstate', function() {
-        document.querySelectorAll('.bottom-sheet-overlay').forEach(el => el.classList.remove('active'));
-        document.body.classList.remove('modal-open');
-    });
+    // --- BOTTOM SHEET ENGINE ---
+    function openSheet(id) { history.pushState({ modal: id }, id, "#" + id); document.getElementById(id).classList.add('active'); document.body.classList.add('modal-open'); }
+    function closeSheet(id) { if(history.state && history.state.modal === id) { history.back(); } else { document.getElementById(id).classList.remove('active'); document.body.classList.remove('modal-open'); } }
+    function closeSheetOutside(e, id) { if(e.target.id === id) { closeSheet(id); } }
+    window.addEventListener('popstate', function() { document.querySelectorAll('.bottom-sheet-overlay').forEach(el => el.classList.remove('active')); document.body.classList.remove('modal-open'); });
 
     function setupSwipeToClose(sheetOverlayId, sheetContentId, headerId) {
-        const sheet = document.getElementById(sheetContentId);
-        const header = document.getElementById(headerId);
+        const sheet = document.getElementById(sheetContentId); const header = document.getElementById(headerId);
         let startY = 0, currentY = 0, isDragging = false;
-
-        header.addEventListener('touchstart', (e) => {
-            startY = e.touches[0].clientY;
-            isDragging = true;
-            sheet.style.transition = 'none';
-        }, {passive: true});
-
-        header.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            currentY = e.touches[0].clientY;
-            let deltaY = currentY - startY;
-            if (deltaY > 0) { 
-                e.preventDefault();
-                sheet.style.transform = `translateY(${deltaY}px)`; 
-            }
-        }, {passive: false});
-
-        header.addEventListener('touchend', () => {
-            if (!isDragging) return;
-            isDragging = false;
-            sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)';
-            let deltaY = currentY - startY;
-            if (deltaY > 60) { closeSheet(sheetOverlayId); setTimeout(() => { sheet.style.transform = ''; }, 400); } 
-            else { sheet.style.transform = ''; }
-        });
+        header.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; isDragging = true; sheet.style.transition = 'none'; }, {passive: true});
+        header.addEventListener('touchmove', (e) => { if (!isDragging) return; currentY = e.touches[0].clientY; let deltaY = currentY - startY; if (deltaY > 0) { e.preventDefault(); sheet.style.transform = `translateY(${deltaY}px)`; } }, {passive: false});
+        header.addEventListener('touchend', () => { if (!isDragging) return; isDragging = false; sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)'; let deltaY = currentY - startY; if (deltaY > 60) { closeSheet(sheetOverlayId); setTimeout(() => { sheet.style.transform = ''; }, 400); } else { sheet.style.transform = ''; } });
     }
-
     setupSwipeToClose('sheet-password', 'sheet-password-content', 'hdr-password');
     setupSwipeToClose('sheet-timings', 'sheet-timings-content', 'hdr-timings');
     setupSwipeToClose('sheet-pin', 'sheet-pin-content', 'hdr-pin');
@@ -346,29 +244,13 @@
 
     // --- 1. CHANGE PASSWORD ---
     async function updatePassword() {
-        let oldPass = document.getElementById("old-pass").value;
-        let newPass = document.getElementById("new-pass").value;
-        let btn = document.getElementById("btn-update-pass");
-
-        if(!oldPass || !newPass) return alert("Dono password fields bharna zaroori hai.");
-        if(newPass.length < 6) return alert("New password minimum 6 characters ka hona chahiye.");
-
+        let oldPass = document.getElementById("old-pass").value; let newPass = document.getElementById("new-pass").value; let btn = document.getElementById("btn-update-pass");
+        if(!oldPass || !newPass) return alert("All fields are required.");
+        if(newPass.length < 6) return alert("Minimum 6 characters required.");
         btn.innerText = "⏳ Verifying...";
-        const user = auth.currentUser;
-        const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPass);
-
-        try {
-            await user.reauthenticateWithCredential(credential);
-            await user.updatePassword(newPass);
-            alert("✅ Password Successfully Changed!");
-            closeSheet('sheet-password');
-            document.getElementById("old-pass").value = "";
-            document.getElementById("new-pass").value = "";
-        } catch(error) {
-            alert("❌ Failed: " + error.message);
-        } finally {
-            btn.innerText = "Save New Password";
-        }
+        const user = auth.currentUser; const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPass);
+        try { await user.reauthenticateWithCredential(credential); await user.updatePassword(newPass); alert("✅ Password Successfully Changed!"); closeSheet('sheet-password'); } 
+        catch(error) { alert("❌ Failed: " + error.message); } finally { btn.innerText = "Save New Password"; }
     }
 
     // --- 2. UPDATE MESS TIMINGS ---
@@ -376,184 +258,143 @@
         openSheet('sheet-timings');
         try {
             const doc = await db.collection("config").doc("timings").get();
-            if(doc.exists) {
-                const d = doc.data();
-                document.getElementById('t-b-start').value = d.bStart ?? 8;
-                document.getElementById('t-b-end').value = d.bEnd ?? 10;
-                document.getElementById('t-l-start').value = d.lStart ?? 13;
-                document.getElementById('t-l-end').value = d.lEnd ?? 15;
-                document.getElementById('t-d-start').value = d.dStart ?? 20;
-                document.getElementById('t-d-end').value = d.dEnd ?? 22;
-            } else {
-                document.getElementById('t-b-start').value = 8;
-                document.getElementById('t-b-end').value = 10;
-                document.getElementById('t-l-start').value = 13;
-                document.getElementById('t-l-end').value = 15;
-                document.getElementById('t-d-start').value = 20;
-                document.getElementById('t-d-end').value = 22;
-            }
-        } catch(e) {
-            console.error(e);
-        }
+            if(doc.exists) { const d = doc.data(); document.getElementById('t-b-start').value = d.bStart ?? 8; document.getElementById('t-b-end').value = d.bEnd ?? 10; document.getElementById('t-l-start').value = d.lStart ?? 13; document.getElementById('t-l-end').value = d.lEnd ?? 15; document.getElementById('t-d-start').value = d.dStart ?? 20; document.getElementById('t-d-end').value = d.dEnd ?? 22; } 
+            else { document.getElementById('t-b-start').value = 8; document.getElementById('t-b-end').value = 10; document.getElementById('t-l-start').value = 13; document.getElementById('t-l-end').value = 15; document.getElementById('t-d-start').value = 20; document.getElementById('t-d-end').value = 22; }
+        } catch(e) { console.error(e); }
     }
-
     async function saveTimings() {
-        const btn = document.getElementById('btn-save-timings');
-        btn.innerText = "Saving...";
-        const data = {
-            bStart: parseInt(document.getElementById('t-b-start').value),
-            bEnd: parseInt(document.getElementById('t-b-end').value),
-            lStart: parseInt(document.getElementById('t-l-start').value),
-            lEnd: parseInt(document.getElementById('t-l-end').value),
-            dStart: parseInt(document.getElementById('t-d-start').value),
-            dEnd: parseInt(document.getElementById('t-d-end').value),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        try {
-            await db.collection("config").doc("timings").set(data);
-            alert("✅ Mess Timings Updated Successfully!");
-            closeSheet('sheet-timings');
-        } catch(e) {
-            alert("Error saving: " + e.message);
-        } finally {
-            btn.innerText = "Save Mess Timings";
-        }
+        const btn = document.getElementById('btn-save-timings'); btn.innerText = "Saving...";
+        const data = { bStart: parseInt(document.getElementById('t-b-start').value), bEnd: parseInt(document.getElementById('t-b-end').value), lStart: parseInt(document.getElementById('t-l-start').value), lEnd: parseInt(document.getElementById('t-l-end').value), dStart: parseInt(document.getElementById('t-d-start').value), dEnd: parseInt(document.getElementById('t-d-end').value), updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        try { await db.collection("config").doc("timings").set(data); alert("✅ Mess Timings Updated!"); closeSheet('sheet-timings'); } 
+        catch(e) { alert("Error: " + e.message); } finally { btn.innerText = "Save Mess Timings"; }
     }
 
     // --- 3. GATEKEEPER PASS / PIN ---
     async function openPinSheet() {
         openSheet('sheet-pin');
-        try {
-            const doc = await db.collection("config").doc("gate_security").get();
-            if(doc.exists) {
-                document.getElementById('gate-new-pin').value = doc.data().pin || "";
-            } else {
-                document.getElementById('gate-new-pin').value = "Admin@123";
-            }
-        } catch(e) {
-            console.error(e);
-        }
+        try { const doc = await db.collection("config").doc("gate_security").get(); if(doc.exists) { document.getElementById('gate-new-pin').value = doc.data().pin || ""; } } catch(e) { console.error(e); }
     }
-
     async function saveGatePin() {
-        const pin = document.getElementById('gate-new-pin').value.trim();
-        if(!pin) return alert("PIN khali nahi ho sakta.");
-        const btn = document.getElementById('btn-save-pin');
-        btn.innerText = "Saving...";
-        try {
-            await db.collection("config").doc("gate_security").set({
-                pin: pin,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            alert("✅ Gatekeeper Terminal PIN Updated!");
-            closeSheet('sheet-pin');
-        } catch(e) {
-            alert("Error: " + e.message);
-        } finally {
-            btn.innerText = "Update Gate PIN";
-        }
+        const pin = document.getElementById('gate-new-pin').value.trim(); if(!pin) return alert("PIN required.");
+        const btn = document.getElementById('btn-save-pin'); btn.innerText = "Saving...";
+        try { await db.collection("config").doc("gate_security").set({ pin: pin, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }); alert("✅ Gate PIN Updated!"); closeSheet('sheet-pin'); } 
+        catch(e) { alert("Error: " + e.message); } finally { btn.innerText = "Update Gate PIN"; }
     }
 
     // --- 4. BULK EXPIRY EXTENSION ---
     async function executeBulkExtension() {
-        const days = parseInt(document.getElementById('bulk-days-input').value);
-        const target = document.getElementById('bulk-target-status').value;
-        if(!days || days < 1) return alert("Please enter valid positive days (e.g. 3).");
-
-        if(!confirm(`Kya aap sach mein sabhi ${target} baccho ki validity ${days} din aage extend karna chahte hain?`)) return;
-
-        const btn = document.getElementById('btn-bulk-extend');
-        btn.innerText = "Updating Records...";
-        btn.disabled = true;
+        const days = parseInt(document.getElementById('bulk-days-input').value); const target = document.getElementById('bulk-target-status').value;
+        if(!days || days < 1) return alert("Enter valid positive days.");
+        if(!confirm(`Extend validity of ${target} students by ${days} days?`)) return;
+        const btn = document.getElementById('btn-bulk-extend'); btn.innerText = "Updating Records..."; btn.disabled = true;
 
         try {
-            const snap = await db.collection("students").get();
-            const batch = db.batch();
-            let count = 0;
-
+            const snap = await db.collection("students").get(); const batch = db.batch(); let count = 0;
             snap.forEach(doc => {
-                const data = doc.data();
-                let shouldUpdate = false;
-
+                const data = doc.data(); let shouldUpdate = false;
                 if (target === 'active' && data.status === 'active') shouldUpdate = true;
                 if (target === 'all' && (data.status === 'active' || data.status === 'paused')) shouldUpdate = true;
 
                 if (shouldUpdate && data.feeValidTill) {
-                    const currentExp = new Date(data.feeValidTill);
-                    currentExp.setDate(currentExp.getDate() + days);
-                    const newDateStr = currentExp.toISOString().split('T')[0];
-                    batch.update(doc.ref, { feeValidTill: newDateStr });
-                    count++;
+                    const currentExp = new Date(data.feeValidTill); currentExp.setDate(currentExp.getDate() + days);
+                    batch.update(doc.ref, { feeValidTill: currentExp.toISOString().split('T')[0] }); count++;
                 }
             });
-
-            await batch.commit();
-            alert(`🎉 Success! ${count} students ki fee validity ${days} din extend ho chuki hai.`);
-            closeSheet('sheet-bulk-extend');
-            document.getElementById('bulk-days-input').value = "";
-        } catch(e) {
-            alert("Bulk update failed: " + e.message);
-        } finally {
-            btn.innerText = "Extend Validity Now";
-            btn.disabled = false;
-        }
+            await batch.commit(); alert(`🎉 Success! ${count} students extended.`); closeSheet('sheet-bulk-extend'); document.getElementById('bulk-days-input').value = "";
+        } catch(e) { alert("Bulk update failed: " + e.message); } finally { btn.innerText = "Extend Validity Now"; btn.disabled = false; }
     }
 
-    // --- 5. DOWNLOAD MONTHLY REPORT (CSV) ---
+    // --- 5. DOWNLOAD MONTHLY ATTENDANCE REPORT ---
     async function downloadMonthlyReport() {
         try {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const monthPrefix = `${year}-${month}`;
-
-            alert("⏳ Generating current month report... please wait 2 seconds.");
-
-            const snap = await db.collection("attendance")
-                                  .where("date", ">=", `${monthPrefix}-01`)
-                                  .where("date", "<=", `${monthPrefix}-31`)
-                                  .get();
-
-            if (snap.empty) {
-                return alert("Is mahine koi attendance record nahi mila!");
-            }
+            const now = new Date(); const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            alert("⏳ Generating attendance report...");
+            const snap = await db.collection("attendance").where("date", ">=", `${monthPrefix}-01`).where("date", "<=", `${monthPrefix}-31`).get();
+            if (snap.empty) return alert("No records found for this month!");
 
             let csv = "Student Code,Student Name,Room,Meal,Date,Status\n";
-            snap.forEach(doc => {
-                const d = doc.data();
-                const status = d.isDue ? "Allowed on Due" : "Verified";
-                csv += `"${d.code || ''}","${d.name || ''}","${d.room || ''}","${d.meal || ''}","${d.date || ''}","${status}"\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `OBC_Mess_Report_${monthPrefix}.csv`;
-            link.click();
-        } catch(e) {
-            alert("Report error: " + e.message);
-        }
+            snap.forEach(doc => { const d = doc.data(); csv += `"${d.code || ''}","${d.name || ''}","${d.room || ''}","${d.meal || ''}","${d.date || ''}","${d.isDue ? "Allowed on Due" : "Verified"}"\n`; });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `Attendance_${monthPrefix}.csv`; link.click();
+        } catch(e) { alert("Report error: " + e.message); }
     }
 
-    // --- 6. DATABASE BACKUP (JSON) ---
+    // --- 6. DATABASE BACKUP ---
     async function downloadDatabaseBackup() {
         try {
-            alert("⏳ Downloading complete student database backup...");
+            alert("⏳ Downloading database backup...");
+            const snap = await db.collection("students").get(); const data = []; snap.forEach(doc => data.push(doc.data()));
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); link.download = `OBC_Mess_Backup_${new Date().toISOString().split('T')[0]}.json`; link.click();
+        } catch(e) { alert("Backup failed: " + e.message); }
+    }
+
+    // 🔥 7. DOWNLOAD FINANCIAL INVOICE (ALL TRANSACTIONS) 🔥
+    async function downloadFinancialInvoice() {
+        try {
+            alert("⏳ Generating full Financial Invoice... Please wait.");
+            
             const snap = await db.collection("students").get();
-            const data = [];
+            if (snap.empty) return alert("No records found in database!");
 
-            snap.forEach(doc => data.push(doc.data()));
+            // Header for CSV
+            let csv = "Transaction Date,Day,Student Name,Code/ID,Room/Pass,Transaction Type,Payment Mode,Amount (INR),Extended Till\n";
+            let allTransactions = [];
 
-            const jsonStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
+            // Loop through all students (Regular + Guests)
+            snap.forEach(doc => {
+                const data = doc.data();
+                const hist = data.paymentHistory || [];
+                
+                // Add all history entries for this user into a master list
+                hist.forEach(h => {
+                    let amt = parseInt(h.amount);
+                    let tType = "Payment Received";
+                    if (amt < 0) tType = "Deduction / Refund";
+                    if (data.isGuest) tType = "Guest Pass Payment";
+
+                    allTransactions.push({
+                        dateStr: h.dateAdded,
+                        day: h.day || "-",
+                        name: data.name || "Unknown",
+                        code: data.code || "-",
+                        room: data.room || "-",
+                        type: tType,
+                        mode: h.mode || "Cash",
+                        amount: amt,
+                        validTill: h.validTill || "-"
+                    });
+                });
+            });
+
+            // If no transactions found
+            if(allTransactions.length === 0) {
+                return alert("No payment history or transactions found in the system!");
+            }
+
+            // Sort all transactions by date (Oldest to Newest)
+            allTransactions.sort((a, b) => new Date(a.dateStr) - new Date(b.dateStr));
+
+            let totalCollection = 0;
+
+            // Generate CSV Rows
+            allTransactions.forEach(t => {
+                totalCollection += t.amount;
+                csv += `"${t.dateStr}","${t.day}","${t.name}","${t.code}","${t.room}","${t.type}","${t.mode}","${t.amount}","${t.validTill}"\n`;
+            });
+
+            // Add Summary Footer
+            csv += `\n,,,,,"TOTAL NET COLLECTION",,"Rs. ${totalCollection}",\n`;
+
+            // Create Download Link
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const todayStr = new Date().toISOString().split('T')[0];
+            
             link.href = URL.createObjectURL(blob);
-            link.download = `OBC_Mess_Students_Backup_${todayStr}.json`;
+            link.download = `OBC_Mess_Financial_Invoice_${todayStr}.csv`;
             link.click();
+
         } catch(e) {
-            alert("Backup failed: " + e.message);
+            alert("❌ Invoice generation error: " + e.message);
         }
     }
 </script>
