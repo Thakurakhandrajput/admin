@@ -78,7 +78,7 @@
             <div class="input-group"><label>Valid Till</label><input type="date" id="stu-date" onchange="calculateDays()" required></div>
         </div>
 
-        <!-- 🔥 SMART DYNAMIC DAYS DISPLAY -->
+        <!-- 🔥 SMART DYNAMIC DAYS DISPLAY (Fixed Inclusive Counting) -->
         <div id="days-info"></div>
         
         <!-- Payment Details -->
@@ -109,7 +109,7 @@
     // Default Today's Date
     document.getElementById("stu-start").value = new Date().toISOString().split('T')[0];
 
-    // 🔥 SMART DAYS CALCULATOR LOGIC
+    // 🔥 SMART DAYS CALCULATOR LOGIC (Fixed for Inclusive Days)
     function calculateDays() {
         let startVal = document.getElementById("stu-start").value;
         let endVal = document.getElementById("stu-date").value;
@@ -118,9 +118,11 @@
         if(startVal && endVal) {
             let sDate = new Date(startVal);
             let eDate = new Date(endVal);
+            
             // Ignore timezones for raw date difference
             let diffTime = eDate.getTime() - sDate.getTime();
-            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+            // +1 added below so that same date counts as 1 day, next date counts as 2 days.
+            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1; 
 
             infoBox.style.display = "block";
             
@@ -128,10 +130,6 @@
                 infoBox.style.background = "rgba(52, 199, 89, 0.1)";
                 infoBox.style.borderColor = "var(--success)";
                 infoBox.innerHTML = `✅ Registration for <span style="font-size:16px; color:var(--success);">${diffDays} Days</span>`;
-            } else if (diffDays === 0) {
-                infoBox.style.background = "rgba(255, 149, 0, 0.1)";
-                infoBox.style.borderColor = "var(--warning)";
-                infoBox.innerHTML = `⚠️ Valid for <span style="font-size:16px; color:var(--warning);">Today Only (0 Days)</span>`;
             } else {
                 infoBox.style.background = "rgba(255, 59, 48, 0.1)";
                 infoBox.style.borderColor = "var(--danger)";
