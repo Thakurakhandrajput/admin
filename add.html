@@ -160,7 +160,10 @@
                 <div class="input-group">
                     <label>Pass Duration</label>
                     <select id="g-duration" onchange="handleGuestDuration()">
-                        <option value="1meal">🍽️ Single Meal (Just Now)</option>
+                        <option value="meal_breakfast">🍽️ 1 Meal (Breakfast)</option>
+                        <option value="meal_lunch">🍽️ 1 Meal (Lunch)</option>
+                        <option value="meal_dinner">🍽️ 1 Meal (Dinner)</option>
+                        <option value="2meals">🍽️ 2 Meals (e.g. Lunch & Dinner)</option>
                         <option value="1day">📅 1 Full Day (Today)</option>
                         <option value="2days">📅 2 Full Days</option>
                         <option value="3days">📅 3 Full Days</option>
@@ -192,7 +195,6 @@
 <script>
     const db = firebase.firestore();
 
-    // Default Today's Date
     document.getElementById("stu-start").value = new Date().toISOString().split('T')[0];
 
     function calculateDays() {
@@ -283,23 +285,23 @@
         }
     }
 
-    // --- MASTER SAVE LOGIC (Handles both Regular & Guest) ---
+    // --- MASTER SAVE LOGIC ---
     async function saveStudent(isGuest) {
-        let code, name, room, dateFrom, dateTo, payMode, amt, file, btn;
+        let code, name, room, dateFrom, dateTo, payMode, amt, file, btn, passType;
 
         if (isGuest) {
             name = document.getElementById("g-name").value.trim();
             if(!name) return alert("⚠️ Guest Name / Detail is required!");
             
-            // Auto Generate Code & Room
-            code = "G" + Math.floor(1000 + Math.random() * 9000); // e.g. G8492
+            // Auto Generate Code for Guest
+            code = "G" + Math.floor(1000 + Math.random() * 9000); 
             room = "Guest";
             
-            // Calculate Dates based on Dropdown
             let dur = document.getElementById("g-duration").value;
             let sDate = new Date(); let eDate = new Date();
+            passType = dur; // 'meal_breakfast', '2meals', '1day', etc.
             
-            if(dur === '1meal' || dur === '1day') { eDate = new Date(); } 
+            if(dur.startsWith('meal_') || dur === '2meals' || dur === '1day') { eDate = new Date(); } 
             else if(dur === '2days') { eDate.setDate(sDate.getDate() + 1); } 
             else if(dur === '3days') { eDate.setDate(sDate.getDate() + 2); } 
             else if(dur === 'custom') {
@@ -324,6 +326,7 @@
             room = document.getElementById("stu-room").value.trim();
             dateFrom = document.getElementById("stu-start").value;
             dateTo = document.getElementById("stu-date").value;
+            passType = "regular";
             
             if(!code || !name || !dateTo) return alert("⚠️ Code, Name and Valid Till Date are required!");
             let sDate = new Date(dateFrom); let eDate = new Date(dateTo);
@@ -350,10 +353,11 @@
         }
 
         try {
+            // isGuest: true flag added for filtering later
             await db.collection("students").doc(code).set({ 
                 code: code, name: name, room: room, startDate: dateFrom, feeValidTill: dateTo, 
                 paymentMode: payMode, paymentAmount: amt || "0", photo: photoUrl, status: "active", 
-                pauseHistory: [], paymentHistory: paymentHist 
+                pauseHistory: [], paymentHistory: paymentHist, isGuest: isGuest, passType: passType 
             });
             
             if(isGuest) {
