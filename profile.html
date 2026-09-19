@@ -76,10 +76,15 @@
         .btn-danger { background: transparent; color: var(--danger); border: 2px solid var(--danger); margin-top: 15px;}
         .btn-danger:active { background: rgba(255, 59, 48, 0.1); }
 
+        /* DYNAMIC PAYMENT SECTION */
+        #payment-section { display: none; padding: 18px; border-radius: 16px; margin-bottom: 15px; transition: 0.3s; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
         /* PAYMENT HISTORY CARD */
         .pay-card { background:#f9f9f9; padding:18px; border-radius:18px; margin-bottom:12px; border:1px solid #f0f0f0; }
         .pay-card-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
         .pay-amt { font-size: 20px; font-weight: 800; color: var(--success); }
+        .pay-amt-neg { font-size: 20px; font-weight: 800; color: var(--danger); } /* Red for negative amounts */
         .pay-mode { font-size: 12px; font-weight: 700; background: #e5e5ea; padding: 4px 10px; border-radius: 8px; color: var(--text-main); text-transform: uppercase;}
         .pay-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); font-weight: 600; margin-bottom: 5px; }
         .pay-row strong { color: var(--text-main); }
@@ -115,7 +120,7 @@
         <div class="bottom-sheet" id="edit-sheet-content">
             <div class="sheet-header" id="edit-header">
                 <div class="drag-handle-area"><div class="drag-handle"></div></div>
-                <div class="sheet-title">Edit & Extend</div>
+                <div class="sheet-title">Edit Profile</div>
             </div>
             
             <div class="sheet-content">
@@ -132,25 +137,6 @@
                     </div>
                 </div>
 
-                <hr style="border:none; border-top:1px dashed #ddd; margin:20px 0;">
-                <p style="font-size:14px; font-weight:800; margin:0 0 15px 0;">💸 Extend Validity & Payment</p>
-
-                <div class="input-group"><label>Extend Fee Valid Till</label><input type="date" id="edit-date"></div>
-                
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <div class="input-group">
-                        <label>New Payment (₹)</label>
-                        <input type="number" id="edit-pay-amt" placeholder="Amount (e.g. 2500)">
-                    </div>
-                    <div class="input-group">
-                        <label>Pay Mode</label>
-                        <select id="edit-pay-mode">
-                            <option value="Cash">💵 Cash</option>
-                            <option value="Online">📱 Online</option>
-                        </select>
-                    </div>
-                </div>
-
                 <div class="input-group">
                     <label>Account Status</label>
                     <select id="edit-status">
@@ -160,8 +146,33 @@
                         <option value="banned">🔴 Banned</option>
                     </select>
                 </div>
+
+                <hr style="border:none; border-top:1px dashed #ddd; margin:20px 0;">
+
+                <div class="input-group">
+                    <label>Fee Valid Till (Update to open Payment)</label>
+                    <input type="date" id="edit-date" onchange="handleDateChange()">
+                </div>
                 
-                <button type="button" class="btn-main" id="btn-save" onclick="updateProfile()">💾 Save Changes & Payment</button>
+                <!-- 🔥 SMART DYNAMIC PAYMENT SECTION -->
+                <div id="payment-section">
+                    <p id="extension-info" style="font-size:14px; font-weight:800; margin:0 0 10px 0;"></p>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Amount (₹)</label>
+                            <input type="number" id="edit-pay-amt" placeholder="e.g. 2500">
+                        </div>
+                        <div class="input-group" style="margin-bottom:0;">
+                            <label>Pay Mode</label>
+                            <select id="edit-pay-mode">
+                                <option value="Cash">💵 Cash</option>
+                                <option value="Online">📱 Online</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="button" class="btn-main" id="btn-save" onclick="updateProfile()">💾 Save Changes</button>
                 <button type="button" class="btn-main btn-danger" id="btn-del" onclick="deleteStudent()">🗑️ Delete Student</button>
             </div>
         </div>
@@ -190,16 +201,11 @@
     const urlParams = new URLSearchParams(window.location.search);
     const currentCode = urlParams.get('code');
     let globalStudentData = null;
+    let originalFeeDate = null; // Smart Check variable
 
-    if(!currentCode) {
-        alert("No student selected!");
-        window.location.replace("index.html");
-    }
+    if(!currentCode) { alert("No student selected!"); window.location.replace("index.html"); }
 
-    auth.onAuthStateChanged((user) => {
-        if (!user) window.location.replace("login.html"); 
-        else loadProfile();
-    });
+    auth.onAuthStateChanged((user) => { if (!user) window.location.replace("login.html"); else loadProfile(); });
 
     function getDaysLeft(dateStr) {
         let today = new Date(); today.setHours(0,0,0,0);
@@ -251,41 +257,68 @@
 
         try {
             if(stu.status === 'paused') { 
-                let pDate = new Date(stu.lastPauseDate); 
-                let tDate = new Date(todayStr); 
-                let daysPaused = 0;
+                let pDate = new Date(stu.lastPauseDate); let tDate = new Date(todayStr); let daysPaused = 0;
                 if(tDate >= pDate) { daysPaused = Math.floor((tDate - pDate)/(1000*60*60*24)); }
                 
-                let newExp = new Date(stu.feeValidTill); 
-                newExp.setDate(newExp.getDate() + daysPaused);
-                let hist = stu.pauseHistory || []; 
-                hist.push({start: stu.lastPauseDate, end: todayStr});
+                let newExp = new Date(stu.feeValidTill); newExp.setDate(newExp.getDate() + daysPaused);
+                let hist = stu.pauseHistory || []; hist.push({start: stu.lastPauseDate, end: todayStr});
 
-                await db.collection("students").doc(currentCode).update({ 
-                    status: 'active', lastPauseDate: null, pauseHistory: hist, feeValidTill: newExp.toISOString().split('T')[0] 
-                });
+                await db.collection("students").doc(currentCode).update({ status: 'active', lastPauseDate: null, pauseHistory: hist, feeValidTill: newExp.toISOString().split('T')[0] });
                 alert(`✅ Resumed! Expiry extended by ${daysPaused} days.`);
             } else { 
-                let tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1); 
+                let tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1); 
                 let tomorrowStr = tomorrow.toISOString().split('T')[0];
                 await db.collection("students").doc(currentCode).update({ status: 'paused', lastPauseDate: tomorrowStr });
                 alert("⏸️ Account Paused! Pause will apply from TOMORROW.");
             }
-        } catch(error) {
-            alert("❌ Error: " + error.message);
+        } catch(error) { alert("❌ Error: " + error.message); }
+    }
+
+    // --- SMART PAYMENT TOGGLE LOGIC ---
+    function handleDateChange() {
+        let oldDate = new Date(originalFeeDate);
+        let newDate = new Date(document.getElementById("edit-date").value);
+        
+        let diffTime = newDate.getTime() - oldDate.getTime();
+        let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        
+        let paySec = document.getElementById("payment-section");
+        let info = document.getElementById("extension-info");
+        
+        if(diffDays > 0) {
+            // DATE EXTENDED (Green)
+            paySec.style.display = "block";
+            paySec.style.border = "2px dashed var(--success)";
+            paySec.style.background = "rgba(52, 199, 89, 0.05)";
+            info.innerHTML = `📈 Extended by ${diffDays} Days <span style="font-size:11px; font-weight:600; color:#888; display:block;">(Enter Payment Received)</span>`;
+            info.style.color = "var(--success)";
+        } else if(diffDays < 0) {
+            // DATE REDUCED (Red)
+            paySec.style.display = "block";
+            paySec.style.border = "2px dashed var(--danger)";
+            paySec.style.background = "rgba(255, 59, 48, 0.05)";
+            info.innerHTML = `📉 Reduced by ${Math.abs(diffDays)} Days <span style="font-size:11px; font-weight:600; color:#888; display:block;">(Amount will be saved as Deduction/Refund)</span>`;
+            info.style.color = "var(--danger)";
+        } else {
+            // SAME DATE (Hidden)
+            paySec.style.display = "none";
+            document.getElementById("edit-pay-amt").value = "";
         }
     }
 
-    // --- PAYMENT HISTORY & EDIT SHEETS ---
+    // --- BOTTOM SHEETS ---
     function openSheet(id) {
         if(id === 'edit-sheet') {
             let stu = globalStudentData;
+            originalFeeDate = stu.feeValidTill; // Store original date for comparison
             document.getElementById("edit-name").value = stu.name; 
             document.getElementById("edit-room").value = stu.room;
             document.getElementById("edit-date").value = stu.feeValidTill; 
             document.getElementById("edit-status").value = stu.status;
-            document.getElementById("edit-pay-amt").value = ""; // Clear for new entry
+            
+            // Reset Payment Section UI
+            document.getElementById("payment-section").style.display = "none";
+            document.getElementById("edit-pay-amt").value = ""; 
         }
 
         history.pushState({ modal: id }, id, "#" + id);
@@ -295,10 +328,7 @@
 
     function closeSheet(id) {
         if(history.state && history.state.modal === id) { history.back(); } 
-        else { 
-            document.getElementById(id).classList.remove('active'); 
-            document.body.classList.remove('modal-open'); 
-        }
+        else { document.getElementById(id).classList.remove('active'); document.body.classList.remove('modal-open'); }
     }
 
     function closeSheetOutside(e, id) { if(e.target.id === id) { closeSheet(id); } }
@@ -310,10 +340,8 @@
     });
 
     function setupSwipeToClose(sheetOverlayId, sheetContentId, headerId) {
-        const sheet = document.getElementById(sheetContentId);
-        const header = document.getElementById(headerId);
+        const sheet = document.getElementById(sheetContentId); const header = document.getElementById(headerId);
         let startY = 0, currentY = 0, isDragging = false;
-
         header.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; isDragging = true; sheet.style.transition = 'none'; }, {passive: true});
         header.addEventListener('touchmove', (e) => {
             if (!isDragging) return; currentY = e.touches[0].clientY; let deltaY = currentY - startY;
@@ -334,50 +362,45 @@
     function openPaymentHistory() {
         let hist = globalStudentData.paymentHistory || [];
         
-        // Auto Migration: Agar old student hai jiska history nahi bana par initial payment kiya tha
         if(hist.length === 0 && globalStudentData.paymentAmount && parseInt(globalStudentData.paymentAmount) > 0) {
             let sd = new Date(globalStudentData.startDate || new Date());
             hist.push({
                 dateAdded: globalStudentData.startDate || new Date().toISOString().split('T')[0],
                 day: sd.toLocaleDateString('en-US', {weekday: 'long'}),
-                amount: globalStudentData.paymentAmount,
-                mode: globalStudentData.paymentMode || 'Cash',
-                validTill: globalStudentData.feeValidTill
+                amount: globalStudentData.paymentAmount, mode: globalStudentData.paymentMode || 'Cash', validTill: globalStudentData.feeValidTill
             });
         }
 
-        let container = document.getElementById("payment-list-container");
-        container.innerHTML = "";
+        let container = document.getElementById("payment-list-container"); container.innerHTML = "";
 
         if(hist.length === 0) {
             container.innerHTML = "<div style='text-align:center; padding:30px; color:#888; font-weight:600;'>No payments recorded yet.</div>";
         } else {
-            // Sort history - latest on top
             let sortedHist = hist.sort((a,b) => new Date(b.dateAdded) - new Date(a.dateAdded));
-            
             sortedHist.forEach(p => {
-                let d = new Date(p.dateAdded);
-                let dateFormatted = d.toLocaleDateString('en-US', {day:'2-digit', month:'short', year:'numeric'});
-                let v = new Date(p.validTill);
-                let validFormatted = v.toLocaleDateString('en-US', {day:'2-digit', month:'short', year:'numeric'});
+                let d = new Date(p.dateAdded); let dateFormatted = d.toLocaleDateString('en-US', {day:'2-digit', month:'short', year:'numeric'});
+                let v = new Date(p.validTill); let validFormatted = v.toLocaleDateString('en-US', {day:'2-digit', month:'short', year:'numeric'});
+                
+                // Color Code Negative vs Positive Amount
+                let amtValue = parseInt(p.amount);
+                let amtClass = amtValue >= 0 ? "pay-amt" : "pay-amt-neg";
+                let amtDisplay = amtValue >= 0 ? `+₹${amtValue}` : `-₹${Math.abs(amtValue)}`;
 
                 container.innerHTML += `
                     <div class="pay-card">
                         <div class="pay-card-header">
-                            <span class="pay-amt">₹${p.amount}</span>
+                            <span class="${amtClass}">${amtDisplay}</span>
                             <span class="pay-mode">${p.mode}</span>
                         </div>
-                        <div class="pay-row"><span>Date Paid:</span> <strong>${dateFormatted} (${p.day})</strong></div>
+                        <div class="pay-row"><span>Date Logged:</span> <strong>${dateFormatted} (${p.day})</strong></div>
                         <div class="pay-row"><span>Extended Till:</span> <strong>${validFormatted}</strong></div>
-                    </div>
-                `;
+                    </div>`;
             });
         }
         openSheet('payment-sheet');
     }
 
-
-    // --- UPDATE PROFILE & PAYMENT LOGIC ---
+    // --- UPDATE PROFILE & SMART PAYMENT LOGIC ---
     function previewFile(inputId, displayId) { let file = document.getElementById(inputId).files[0]; if(file) document.getElementById(displayId).innerText = "✅ " + file.name; }
     function compressImage(file) {
         return new Promise((resolve) => {
@@ -386,8 +409,7 @@
                 let img = new Image(); img.src = e.target.result;
                 img.onload = () => {
                     let cvs = document.createElement('canvas'); cvs.width = 200; cvs.height = 200;
-                    let minSize = Math.min(img.width, img.height);
-                    let sx = (img.width - minSize) / 2, sy = (img.height - minSize) / 2;
+                    let minSize = Math.min(img.width, img.height); let sx = (img.width - minSize) / 2, sy = (img.height - minSize) / 2;
                     cvs.getContext('2d').drawImage(img, sx, sy, minSize, minSize, 0, 0, 200, 200);
                     resolve(cvs.toDataURL('image/jpeg', 0.6));
                 };
@@ -408,15 +430,26 @@
             let file = document.getElementById("edit-photo").files[0]; 
             if(file) finalPhoto = await compressImage(file); 
 
-            // PAYMENT HISTORY MANAGEMENT
             let hist = globalStudentData.paymentHistory || [];
-            if(hist.length === 0 && globalStudentData.paymentAmount && parseInt(globalStudentData.paymentAmount) > 0) {
-                let sd = new Date(globalStudentData.startDate || new Date());
-                hist.push({ dateAdded: globalStudentData.startDate || new Date().toISOString().split('T')[0], day: sd.toLocaleDateString('en-US', {weekday: 'long'}), amount: globalStudentData.paymentAmount, mode: globalStudentData.paymentMode || 'Cash', validTill: globalStudentData.feeValidTill });
-            }
-            if(payAmt && parseInt(payAmt) > 0) {
+            
+            // SMART PAYMENT CHECK
+            let oldD = new Date(originalFeeDate); let newD = new Date(uDate);
+            let diffDays = Math.round((newD.getTime() - oldD.getTime()) / (1000 * 60 * 60 * 24));
+
+            if(diffDays !== 0 && payAmt && parseInt(payAmt) !== 0) {
+                let finalAmt = parseInt(payAmt);
+                // IF REDUCED -> Force Negative Amount
+                if(diffDays < 0) { finalAmt = -Math.abs(finalAmt); } 
+                else { finalAmt = Math.abs(finalAmt); }
+
                 let today = new Date();
-                hist.push({ dateAdded: today.toISOString().split('T')[0], day: today.toLocaleDateString('en-US', {weekday: 'long'}), amount: payAmt, mode: payMode, validTill: uDate });
+                hist.push({ 
+                    dateAdded: today.toISOString().split('T')[0], 
+                    day: today.toLocaleDateString('en-US', {weekday: 'long'}), 
+                    amount: finalAmt.toString(), 
+                    mode: payMode, 
+                    validTill: uDate 
+                });
             }
             
             await db.collection("students").doc(currentCode).update({ name: uName, room: uRoom, feeValidTill: uDate, status: uStatus, photo: finalPhoto, paymentHistory: hist });
@@ -424,17 +457,15 @@
         } catch(error) {
             alert("❌ Failed to update: " + error.message);
         } finally {
-            btn.innerText = "💾 Save Changes & Payment"; btn.disabled = false;
+            btn.innerText = "💾 Save Changes"; btn.disabled = false;
         }
     }
 
     async function deleteStudent() {
         if(confirm("⚠️ WARNING: Kya aap sach mein is student ka pura record DELETE karna chahte hain?")) {
             document.getElementById("btn-del").innerText = "🗑️ Deleting...";
-            try {
-                await db.collection("students").doc(currentCode).delete();
-                window.location.replace("index.html"); 
-            } catch(error) { alert("❌ Delete Error: " + error.message); document.getElementById("btn-del").innerText = "🗑️ Delete Student"; }
+            try { await db.collection("students").doc(currentCode).delete(); window.location.replace("index.html"); } 
+            catch(error) { alert("❌ Delete Error: " + error.message); document.getElementById("btn-del").innerText = "🗑️ Delete Student"; }
         }
     }
 
