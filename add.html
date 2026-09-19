@@ -9,14 +9,13 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <script>
-        // Auth check pehle hi taaki flash na ho
         const firebaseConfig = { apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE", authDomain: "obc-mess-system.firebaseapp.com", projectId: "obc-mess-system", storageBucket: "obc-mess-system.firebasestorage.app", messagingSenderId: "501219370424", appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d" };
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        firebase.auth().onAuthStateChanged((user) => { if (!user) window.location.href = "index.html"; });
+        firebase.auth().onAuthStateChanged((user) => { if (!user) window.location.replace("login.html"); });
     </script>
     <style>
         /* PREMIUM BASE STYLES */
-        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; }
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --warning: #FF9500; }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; }
 
@@ -31,10 +30,14 @@
         .input-group input, .input-group select { width: 100%; background: var(--bg-color); border: 2px solid transparent; padding: 16px; border-radius: 14px; font-size: 16px; outline: none; font-weight: 600; color: var(--text-main); transition: 0.2s; }
         .input-group input:focus, .input-group select:focus { border-color: var(--primary); background: #fff; }
         
-        .upload-btn { background: rgba(0, 122, 255, 0.08); border: 2px dashed var(--primary); padding: 16px; border-radius: 14px; text-align: center; color: var(--primary); font-weight: 700; position: relative; }
+        .upload-btn { background: rgba(0, 122, 255, 0.08); border: 2px dashed var(--primary); padding: 16px; border-radius: 14px; text-align: center; color: var(--primary); font-weight: 700; position: relative; margin-bottom: 5px;}
         .upload-btn input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;}
         
-        .btn-main { width: 100%; background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 10px; box-shadow: 0 8px 20px rgba(0,122,255,0.25);}
+        /* DYNAMIC INFO BOX */
+        #days-info { display: none; padding: 12px; border-radius: 12px; background: rgba(52, 199, 89, 0.1); color: var(--success); font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 18px; border: 1px dashed var(--success); animation: fadeIn 0.3s ease;}
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .btn-main { width: 100%; background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 8px 20px rgba(0,122,255,0.25);}
         .btn-main:active { transform: scale(0.97); box-shadow: 0 4px 10px rgba(0,122,255,0.15);}
 
         /* BOTTOM NAV */
@@ -71,12 +74,16 @@
         
         <!-- Dates -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-            <div class="input-group"><label>Start Date</label><input type="date" id="stu-start" required></div>
-            <div class="input-group"><label>Valid Till</label><input type="date" id="stu-date" required></div>
+            <div class="input-group"><label>Start Date</label><input type="date" id="stu-start" onchange="calculateDays()" required></div>
+            <div class="input-group"><label>Valid Till</label><input type="date" id="stu-date" onchange="calculateDays()" required></div>
         </div>
+
+        <!-- 🔥 SMART DYNAMIC DAYS DISPLAY -->
+        <div id="days-info"></div>
         
         <!-- Payment Details -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+            <div class="input-group"><label>Amount (₹)</label><input type="number" id="stu-amount" placeholder="e.g. 2500"></div>
             <div class="input-group">
                 <label>Pay Mode</label>
                 <select id="stu-pay-mode">
@@ -84,7 +91,6 @@
                     <option value="Online">📱 Online / UPI</option>
                 </select>
             </div>
-            <div class="input-group"><label>Amount (₹)</label><input type="number" id="stu-amount" placeholder="e.g. 2500"></div>
         </div>
         
         <button class="btn-main" id="btn-save" onclick="saveStudent()">💾 Save Student Record</button>
@@ -100,30 +106,57 @@
 <script>
     const db = firebase.firestore();
 
-    // Set Default Start Date to Today automatically
+    // Default Today's Date
     document.getElementById("stu-start").value = new Date().toISOString().split('T')[0];
+
+    // 🔥 SMART DAYS CALCULATOR LOGIC
+    function calculateDays() {
+        let startVal = document.getElementById("stu-start").value;
+        let endVal = document.getElementById("stu-date").value;
+        let infoBox = document.getElementById("days-info");
+
+        if(startVal && endVal) {
+            let sDate = new Date(startVal);
+            let eDate = new Date(endVal);
+            // Ignore timezones for raw date difference
+            let diffTime = eDate.getTime() - sDate.getTime();
+            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+            infoBox.style.display = "block";
+            
+            if(diffDays > 0) {
+                infoBox.style.background = "rgba(52, 199, 89, 0.1)";
+                infoBox.style.borderColor = "var(--success)";
+                infoBox.innerHTML = `✅ Registration for <span style="font-size:16px; color:var(--success);">${diffDays} Days</span>`;
+            } else if (diffDays === 0) {
+                infoBox.style.background = "rgba(255, 149, 0, 0.1)";
+                infoBox.style.borderColor = "var(--warning)";
+                infoBox.innerHTML = `⚠️ Valid for <span style="font-size:16px; color:var(--warning);">Today Only (0 Days)</span>`;
+            } else {
+                infoBox.style.background = "rgba(255, 59, 48, 0.1)";
+                infoBox.style.borderColor = "var(--danger)";
+                infoBox.innerHTML = `❌ Invalid Dates <span style="font-size:16px; color:var(--danger);">(${diffDays} Days)</span>`;
+            }
+        } else {
+            infoBox.style.display = "none";
+        }
+    }
 
     function previewFile(inputId, displayId) {
         let file = document.getElementById(inputId).files[0];
         if(file) document.getElementById(displayId).innerText = "✅ " + file.name;
     }
 
-    // Image Compression Magic
+    // Image Compression
     function compressImage(file) {
         return new Promise((resolve) => {
-            let reader = new FileReader(); 
-            reader.readAsDataURL(file);
+            let reader = new FileReader(); reader.readAsDataURL(file);
             reader.onload = e => {
-                let img = new Image(); 
-                img.src = e.target.result;
+                let img = new Image(); img.src = e.target.result;
                 img.onload = () => {
-                    let cvs = document.createElement('canvas'); 
-                    cvs.width = 200; 
-                    cvs.height = 200;
-                    // Draw image perfectly centered and cropped
+                    let cvs = document.createElement('canvas'); cvs.width = 200; cvs.height = 200;
                     let minSize = Math.min(img.width, img.height);
-                    let sx = (img.width - minSize) / 2;
-                    let sy = (img.height - minSize) / 2;
+                    let sx = (img.width - minSize) / 2; let sy = (img.height - minSize) / 2;
                     cvs.getContext('2d').drawImage(img, sx, sy, minSize, minSize, 0, 0, 200, 200);
                     resolve(cvs.toDataURL('image/jpeg', 0.6));
                 };
@@ -132,9 +165,9 @@
     }
 
     async function saveStudent() {
-        let code = document.getElementById("stu-code").value;
-        let name = document.getElementById("stu-name").value;
-        let room = document.getElementById("stu-room").value;
+        let code = document.getElementById("stu-code").value.trim();
+        let name = document.getElementById("stu-name").value.trim();
+        let room = document.getElementById("stu-room").value.trim();
         let dateFrom = document.getElementById("stu-start").value;
         let dateTo = document.getElementById("stu-date").value;
         let payMode = document.getElementById("stu-pay-mode").value;
@@ -144,18 +177,35 @@
         if(!code || !name || !dateTo) {
             return alert("⚠️ Code, Name and Valid Till Date are required!");
         }
+
+        // Date validation check
+        let sDate = new Date(dateFrom); let eDate = new Date(dateTo);
+        if(eDate < sDate) {
+            return alert("❌ Invalid Date! 'Valid Till' pehle ki date nahi ho sakti.");
+        }
         
         let btn = document.getElementById("btn-save");
         btn.innerText = "⏳ Saving & Uploading...";
         btn.style.opacity = "0.7";
         btn.disabled = true;
 
-        // Default Avatar if no photo is taken
         let photoUrl = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff&size=200`;
-        if(file) {
-            photoUrl = await compressImage(file);
-        }
+        if(file) { photoUrl = await compressImage(file); }
         
+        // INITIAL PAYMENT HISTORY BUILDER
+        let paymentHist = [];
+        if(amt && parseInt(amt) > 0) {
+            let dStr = new Date().toISOString().split('T')[0];
+            let dayStr = new Date().toLocaleDateString('en-US', {weekday: 'long'});
+            paymentHist.push({
+                dateAdded: dStr,
+                day: dayStr,
+                amount: amt,
+                mode: payMode,
+                validTill: dateTo
+            });
+        }
+
         try {
             await db.collection("students").doc(code).set({ 
                 code: code, 
@@ -167,10 +217,11 @@
                 paymentAmount: amt || "0", 
                 photo: photoUrl, 
                 status: "active", 
-                pauseHistory: [] 
+                pauseHistory: [],
+                paymentHistory: paymentHist // Saved in history automatically!
             });
             alert("✅ Student Successfully Added!");
-            window.location.href = "index.html"; // Redirect to home list automatically
+            window.location.replace("index.html"); 
         } catch(error) {
             alert("❌ Error saving: " + error.message);
             btn.innerText = "💾 Save Student Record";
