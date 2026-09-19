@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OBC Mess - Guest Directory</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        /* ================= PREMIUM BASE STYLES ================= */
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --warning: #FF9500; }
+        
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; overflow-x: hidden; }
+
+        /* ================= APP LOADER ================= */
+        #app-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { border: 4px solid rgba(0, 122, 255, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #main-app { display: none; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ================= HEADER ================= */
+        .header { padding: 30px 20px 20px 20px; display: flex; justify-content: space-between; align-items: center; position: relative;}
+        .btn-back { font-size: 24px; font-weight: bold; cursor: pointer; text-decoration: none; color: var(--text-main); padding: 5px; margin-right: 15px;}
+        .header-content { flex: 1; }
+        .header-content p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .header-content h1 { margin: 2px 0 0 0; font-size: 28px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px;}
+
+        /* ================= STATS CARDS (Guest Specific) ================= */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 20px; margin-bottom: 20px; }
+        .stat-card { padding: 15px; border-radius: 20px; color: #fff; box-shadow: 0 8px 16px rgba(0,0,0,0.06); text-align: center;}
+        .stat-card h3 { margin: 0; font-size: 12px; font-weight: 600; opacity: 0.9; text-transform: uppercase; letter-spacing: 0.5px;}
+        .stat-card h2 { margin: 5px 0 0 0; font-size: 28px; font-weight: 800; }
+        
+        .bg-black { background: linear-gradient(135deg, #2c2c2e, #1c1c1e); }
+        .bg-green { background: linear-gradient(135deg, #34C759, #30b050); }
+        .bg-red { background: linear-gradient(135deg, #FF3B30, #e6352b); }
+
+        /* ================= SEARCH ================= */
+        .controls-row { padding: 0 20px; display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
+        .search-box { flex: 1; padding: 14px 20px; border-radius: 16px; border: none; background: #e3e3e8; outline: none; font-size: 15px; font-weight: 500; color: var(--text-main); transition: 0.2s; }
+        .search-box:focus { background: #fff; box-shadow: 0 0 0 2px var(--primary); }
+
+        /* ================= LIST ================= */
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-bottom: 10px; }
+        .section-header h4 { margin: 0; font-size: 13px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
+        
+        .list-container { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+        .list-item { background: var(--card-bg); border-radius: 20px; padding: 16px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); cursor: pointer; transition: 0.2s; text-decoration: none; color: inherit; border: 1px solid rgba(0,0,0,0.02);}
+        .list-item:active { transform: scale(0.97); background: #f9f9f9;}
+        .list-avatar { width: 50px; height: 50px; border-radius: 14px; object-fit: cover; margin-right: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #f0f0f0;}
+        .list-info { flex: 1; }
+        .list-info h4 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.3px;}
+        .list-info p { margin: 3px 0 0 0; font-size: 12px; color: var(--primary); font-weight: 700; background: rgba(0,122,255,0.1); display: inline-block; padding: 2px 8px; border-radius: 6px;}
+        .list-info span.code { display: block; font-size: 12px; color: var(--text-muted); font-weight: 600; margin-top: 3px;}
+        
+        .badge { padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;}
+        .text-green { color: var(--success); background: rgba(52, 199, 89, 0.15); }
+        .text-red { color: var(--danger); background: rgba(255, 59, 48, 0.15); border: 1px solid rgba(255,59,48,0.3);}
+        .text-gray { color: var(--text-muted); background: rgba(142, 142, 147, 0.15); }
+
+    </style>
+</head>
+<body>
+
+    <div id="app-loader">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="main-app">
+        <div class="header">
+            <a href="index.html" class="btn-back">❮</a>
+            <div class="header-content">
+                <p>Temporary Passes</p>
+                <h1>Guest Directory</h1>
+            </div>
+            <div class="admin-avatar" style="font-size: 24px;">🏃</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card bg-black">
+                <h3>Total</h3><h2 id="stat-total">0</h2>
+            </div>
+            <div class="stat-card bg-green">
+                <h3>Active</h3><h2 id="stat-active">0</h2>
+            </div>
+            <div class="stat-card bg-red">
+                <h3>Expired</h3><h2 id="stat-expired">0</h2>
+            </div>
+        </div>
+
+        <div class="controls-row">
+            <input type="text" id="search-box" class="search-box" placeholder="🔍 Search Guest Name or Code..." onkeyup="applyFilter()">
+        </div>
+
+        <div class="section-header">
+            <h4 id="list-title">All Guests (Latest First)</h4>
+        </div>
+        
+        <div class="list-container" id="guest-list"></div>
+    </div>
+
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE", authDomain: "obc-mess-system.firebaseapp.com", projectId: "obc-mess-system", storageBucket: "obc-mess-system.firebasestorage.app", messagingSenderId: "501219370424", appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d" };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+
+    let allGuests = [];
+
+    auth.onAuthStateChanged((user) => {
+        if (!user) window.location.replace("login.html"); 
+        else {
+            document.getElementById("app-loader").style.display = "none";
+            document.getElementById("main-app").style.display = "block";
+            startGuestSync(); 
+        }
+    });
+
+    function getDaysLeft(dateStr) {
+        let today = new Date(); today.setHours(0,0,0,0);
+        let target = new Date(dateStr);
+        return Math.ceil((target - target.getTimezoneOffset()*60000 - today) / (1000 * 60 * 60 * 24));
+    }
+
+    function formatPassType(type) {
+        const map = {
+            'meal_breakfast': '🍽️ Breakfast Pass',
+            'meal_lunch': '🍽️ Lunch Pass',
+            'meal_dinner': '🍽️ Dinner Pass',
+            '2meals': '🍽️ 2 Meals Pass',
+            '1day': '📅 1 Day Pass',
+            '2days': '📅 2 Days Pass',
+            '3days': '📅 3 Days Pass',
+            'custom': '⚙️ Custom Pass',
+            'regular': 'Regular'
+        };
+        return map[type] || 'Guest Pass';
+    }
+
+    function startGuestSync() {
+        // 🔥 GUEST FILTER: Only fetch documents where isGuest === true
+        db.collection("students").where("isGuest", "==", true).onSnapshot((snap) => {
+            allGuests = []; 
+            let tTotal = 0, tActive = 0, tExpired = 0;
+            
+            snap.forEach(doc => {
+                let data = doc.data(); 
+                let days = getDaysLeft(data.feeValidTill); 
+                data.daysLeft = days; 
+                
+                allGuests.push(data); 
+                tTotal++;
+                
+                if(days >= 0) { tActive++; } 
+                else { tExpired++; }
+            });
+            
+            document.getElementById("stat-total").innerText = tTotal; 
+            document.getElementById("stat-active").innerText = tActive; 
+            document.getElementById("stat-expired").innerText = tExpired;
+            
+            applyFilter();
+        });
+    }
+
+    function applyFilter() {
+        let q = document.getElementById("search-box").value.toLowerCase();
+        let filtered = allGuests;
+        
+        if(q) {
+            filtered = filtered.filter(g => g.name.toLowerCase().includes(q) || g.code.toLowerCase().includes(q));
+        }
+
+        // Sort: Active guests first, then by days left (closest to expiry first)
+        filtered.sort((a, b) => {
+            if(a.daysLeft >= 0 && b.daysLeft < 0) return -1;
+            if(a.daysLeft < 0 && b.daysLeft >= 0) return 1;
+            return a.daysLeft - b.daysLeft; 
+        });
+
+        renderList(filtered);
+    }
+
+    function renderList(list) {
+        const container = document.getElementById("guest-list"); container.innerHTML = "";
+        
+        if(list.length === 0) { 
+            container.innerHTML = `<div style="text-align:center; padding: 40px 20px; color:#888; font-weight:600;">No guests found.<br><span style="font-size:12px; font-weight:500;">Add guests from the 'Add New' page.</span></div>`; 
+            return; 
+        }
+
+        list.forEach(guest => {
+            let isExpired = guest.daysLeft < 0;
+            let badgeClass = isExpired ? 'text-red' : 'text-green';
+            let badgeText = isExpired ? 'EXPIRED' : (guest.daysLeft === 0 ? 'VALID TODAY' : `${guest.daysLeft} DAYS LEFT`);
+            
+            let passLabel = formatPassType(guest.passType);
+
+            container.innerHTML += `
+                <a href="profile.html?code=${guest.code}" class="list-item">
+                    <img src="${guest.photo}" class="list-avatar">
+                    <div class="list-info">
+                        <h4>${guest.name}</h4>
+                        <p>${passLabel}</p>
+                        <span class="code">Code: ${guest.code}</span>
+                    </div>
+                    <div><span class="badge ${badgeClass}">${badgeText}</span></div>
+                </a>`;
+        });
+    }
+</script>
+</body>
+</html>
