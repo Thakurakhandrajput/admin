@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
         /* ================= PREMIUM BASE STYLES ================= */
-        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --danger: #FF3B30; }
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --danger: #FF3B30; --success: #34C759; }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; -webkit-tap-highlight-color: transparent; }
         
         body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 40px; }
@@ -20,7 +20,8 @@
         /* ================= HEADER & PROFILE INFO ================= */
         .header { background: var(--card-bg); padding: 50px 20px 30px 20px; text-align: center; border-radius: 0 0 30px 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); position: relative; }
         .btn-back { position: absolute; top: 20px; left: 20px; font-size: 24px; font-weight: bold; cursor: pointer; text-decoration: none; color: var(--text-main); padding: 5px;}
-        .btn-edit { position: absolute; top: 20px; right: 20px; font-size: 22px; cursor: pointer; background: var(--bg-color); padding: 8px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.05);}
+        .btn-edit { position: absolute; top: 20px; right: 20px; font-size: 22px; cursor: pointer; background: var(--bg-color); padding: 8px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s;}
+        .btn-edit:active { transform: scale(0.9); }
         
         .profile-pic { width: 120px; height: 120px; border-radius: 35px; object-fit: cover; margin-bottom: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); border: 4px solid #fff; }
         .profile-name { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
@@ -40,7 +41,7 @@
         .cal-date { font-weight: 700; font-size: 14px; width: 65px; color: var(--text-muted); }
         .meal-dots { display: flex; gap: 8px; }
         .dot { padding: 6px 12px; border-radius: 10px; font-size: 11px; font-weight: 800; }
-        .dot.yes { background: rgba(52, 199, 89, 0.15); color: #28a745; }
+        .dot.yes { background: rgba(52, 199, 89, 0.15); color: var(--success); }
         .dot.no { background: rgba(255, 59, 48, 0.15); color: var(--danger); }
         .dot.pause { background: rgba(0, 122, 255, 0.15); color: var(--primary); } 
         .dot.due { background: rgba(255, 152, 0, 0.15); color: #ff9800; }
@@ -66,7 +67,7 @@
         .input-group input:focus, .input-group select:focus { border-color: var(--primary); background: #fff; }
         
         .upload-btn { background: rgba(0, 122, 255, 0.08); border: 2px dashed var(--primary); padding: 16px; border-radius: 14px; text-align: center; color: var(--primary); font-weight: 700; position: relative; }
-        .upload-btn input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; }
+        .upload-btn input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;}
         
         .btn-main { width: 100%; background: var(--primary); color: #fff; border: none; padding: 18px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 10px;}
         .btn-main:active { transform: scale(0.97); }
@@ -129,8 +130,8 @@
                     </select>
                 </div>
                 
-                <button class="btn-main" onclick="updateProfile()">💾 Save Changes</button>
-                <button class="btn-main btn-danger" onclick="deleteStudent()">🗑️ Delete Student</button>
+                <button type="button" class="btn-main" id="btn-save" onclick="updateProfile()">💾 Save Changes</button>
+                <button type="button" class="btn-main btn-danger" id="btn-del" onclick="deleteStudent()">🗑️ Delete Student</button>
             </div>
         </div>
     </div>
@@ -147,7 +148,7 @@
 
     if(!currentCode) {
         alert("No student selected!");
-        window.location.href = "index.html";
+        window.location.replace("index.html");
     }
 
     auth.onAuthStateChanged((user) => {
@@ -163,7 +164,8 @@
 
     function loadProfile() {
         db.collection("students").doc(currentCode).onSnapshot((doc) => {
-            if(!doc.exists) { window.location.href = "index.html"; return; }
+            if(!doc.exists) return; // Agar delete ho chuka hai to kuch mat karo, wo apne aap redirect ho jayega
+            
             let stu = doc.data();
             globalStudentData = stu;
 
@@ -181,13 +183,12 @@
                 badge.innerText = `BANNED`; badge.className = "badge-main expired"; pBtn.style.display="none";
             } else if(stu.status === 'paused') { 
                 badge.innerText = `PAUSED (On Leave)`; badge.className = "badge-main paused-badge"; 
-                pBtn.style.display="block"; pBtn.innerText="▶️ Resume Account"; pBtn.style.background="#34C759"; 
+                pBtn.style.display="block"; pBtn.innerText="▶️ Resume Account"; pBtn.style.background="var(--success)"; 
             } else { 
                 if(days >= 0) {
                     badge.innerText = `${days} Days Left`; 
                     badge.className = "badge-main";
                 } else {
-                    // Yahan batayega kitne din se expired hai
                     badge.innerText = `Expired (Due: ${Math.abs(days)} Days)`; 
                     badge.className = "badge-main expired";
                 }
@@ -203,28 +204,34 @@
         let stu = globalStudentData;
         let today = new Date();
         let todayStr = today.toISOString().split('T')[0];
+        let pBtn = document.getElementById("btn-pause");
+        pBtn.innerText = "⏳ Wait...";
 
-        if(stu.status === 'paused') { 
-            let pDate = new Date(stu.lastPauseDate); 
-            let tDate = new Date(todayStr); 
-            let daysPaused = 0;
-            if(tDate >= pDate) { daysPaused = Math.floor((tDate - pDate)/(1000*60*60*24)); }
-            
-            let newExp = new Date(stu.feeValidTill); 
-            newExp.setDate(newExp.getDate() + daysPaused);
-            let hist = stu.pauseHistory || []; 
-            hist.push({start: stu.lastPauseDate, end: todayStr});
+        try {
+            if(stu.status === 'paused') { 
+                let pDate = new Date(stu.lastPauseDate); 
+                let tDate = new Date(todayStr); 
+                let daysPaused = 0;
+                if(tDate >= pDate) { daysPaused = Math.floor((tDate - pDate)/(1000*60*60*24)); }
+                
+                let newExp = new Date(stu.feeValidTill); 
+                newExp.setDate(newExp.getDate() + daysPaused);
+                let hist = stu.pauseHistory || []; 
+                hist.push({start: stu.lastPauseDate, end: todayStr});
 
-            await db.collection("students").doc(currentCode).update({ 
-                status: 'active', lastPauseDate: null, pauseHistory: hist, feeValidTill: newExp.toISOString().split('T')[0] 
-            });
-            alert(`✅ Resumed! Expiry extended by ${daysPaused} days.`);
-        } else { 
-            let tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1); 
-            let tomorrowStr = tomorrow.toISOString().split('T')[0];
-            await db.collection("students").doc(currentCode).update({ status: 'paused', lastPauseDate: tomorrowStr });
-            alert("⏸️ Account Paused! Please Note: Pause will apply from TOMORROW. Today's meals will be counted normally.");
+                await db.collection("students").doc(currentCode).update({ 
+                    status: 'active', lastPauseDate: null, pauseHistory: hist, feeValidTill: newExp.toISOString().split('T')[0] 
+                });
+                alert(`✅ Resumed! Expiry extended by ${daysPaused} days.`);
+            } else { 
+                let tomorrow = new Date(today);
+                tomorrow.setDate(tomorrow.getDate() + 1); 
+                let tomorrowStr = tomorrow.toISOString().split('T')[0];
+                await db.collection("students").doc(currentCode).update({ status: 'paused', lastPauseDate: tomorrowStr });
+                alert("⏸️ Account Paused! Please Note: Pause will apply from TOMORROW.");
+            }
+        } catch(error) {
+            alert("❌ Error: " + error.message);
         }
     }
 
@@ -238,7 +245,7 @@
         
         history.pushState({ modal: 'edit-sheet' }, "Edit Profile", "#edit");
         document.getElementById('edit-sheet').classList.add('active'); 
-        document.body.classList.add('modal-open'); // 🔥 Lock Background Scroll
+        document.body.classList.add('modal-open'); 
     }
 
     function closeEditPopup() {
@@ -275,7 +282,7 @@
             currentY = e.touches[0].clientY;
             let deltaY = currentY - startY;
             if (deltaY > 0) { 
-                e.preventDefault(); // Stop pull-to-refresh
+                e.preventDefault(); 
                 sheet.style.transform = `translateY(${deltaY}px)`; 
             }
         }, {passive: false});
@@ -315,19 +322,43 @@
     }
 
     async function updateProfile() {
-        let uName = document.getElementById("edit-name").value, uRoom = document.getElementById("edit-room").value, uDate = document.getElementById("edit-date").value, uStatus = document.getElementById("edit-status").value;
-        let finalPhoto = globalStudentData.photo; 
-        let file = document.getElementById("edit-photo").files[0]; 
-        if(file) finalPhoto = await compressImage(file); 
-        
-        await db.collection("students").doc(currentCode).update({ name: uName, room: uRoom, feeValidTill: uDate, status: uStatus, photo: finalPhoto });
-        closeEditPopup(); 
+        let btn = document.getElementById("btn-save");
+        btn.innerText = "⏳ Saving...";
+        btn.disabled = true;
+
+        try {
+            let uName = document.getElementById("edit-name").value, uRoom = document.getElementById("edit-room").value, uDate = document.getElementById("edit-date").value, uStatus = document.getElementById("edit-status").value;
+            let finalPhoto = globalStudentData.photo; 
+            let file = document.getElementById("edit-photo").files[0]; 
+            if(file) finalPhoto = await compressImage(file); 
+            
+            await db.collection("students").doc(currentCode).update({ name: uName, room: uRoom, feeValidTill: uDate, status: uStatus, photo: finalPhoto });
+            closeEditPopup(); 
+        } catch(error) {
+            alert("❌ Failed to update: " + error.message);
+        } finally {
+            btn.innerText = "💾 Save Changes";
+            btn.disabled = false;
+        }
     }
 
+    // 🔥 FIXED DELETE STUDENT LOGIC
     async function deleteStudent() {
-        if(confirm("⚠️ Pura record DELETE karna chahte hain?")) {
-            await db.collection("students").doc(currentCode).delete();
-            window.location.href = "index.html";
+        let confirmation = confirm("⚠️ WARNING: Kya aap sach mein is student ka pura record DELETE karna chahte hain? Ye Undo nahi hoga!");
+        if(confirmation) {
+            let btn = document.getElementById("btn-del");
+            btn.innerText = "🗑️ Deleting...";
+            btn.disabled = true;
+
+            try {
+                await db.collection("students").doc(currentCode).delete();
+                alert("✅ Student Record Successfully Deleted!");
+                window.location.replace("index.html"); // Redirect silently
+            } catch(error) {
+                alert("❌ Delete Error: " + error.message);
+                btn.innerText = "🗑️ Delete Student";
+                btn.disabled = false;
+            }
         }
     }
 
