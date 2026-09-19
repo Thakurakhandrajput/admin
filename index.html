@@ -16,7 +16,7 @@
         
         body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; overflow-x: hidden; }
 
-        /* 🔥 SCROLL LOCK CLASS (Jab popup khulega, tabhi lagegi) */
+        /* 🔥 SCROLL LOCK CLASS */
         body.modal-open { overflow: hidden; overscroll-behavior-y: none; }
 
         /* ================= APP LOADER ================= */
@@ -47,11 +47,16 @@
         .bg-blue { background: linear-gradient(135deg, #007AFF, #0066d6); }
 
         /* ================= SEARCH & SORT ================= */
-        .controls-row { padding: 0 20px; display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+        .controls-row { padding: 0 20px; display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
         .search-box { flex: 1; padding: 14px 20px; border-radius: 16px; border: none; background: #e3e3e8; outline: none; font-size: 15px; font-weight: 500; color: var(--text-main); transition: 0.2s; }
         .search-box:focus { background: #fff; box-shadow: 0 0 0 2px var(--primary); }
         .btn-sort { background: #fff; border: 1px solid #e5e5ea; padding: 0 15px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--text-main); box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer; height: 48px; gap: 6px; transition: 0.2s;}
         .btn-sort:active { background: #f0f0f5; transform: scale(0.95);}
+
+        /* 🔥 GUEST NAVIGATION BANNER */
+        .guest-nav-banner { background: var(--card-bg); margin: 0 20px 20px 20px; border-radius: 18px; padding: 15px 20px; display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); cursor: pointer; transition: 0.2s; border: 1px solid rgba(0,0,0,0.02); }
+        .guest-nav-banner:active { transform: scale(0.97); background: #f9f9f9; }
+        .guest-icon-small { font-size: 22px; margin-right: 15px; background: rgba(0, 122, 255, 0.1); width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; border-radius: 12px; }
 
         /* ================= LIST ================= */
         .section-header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-bottom: 10px; }
@@ -85,19 +90,16 @@
         .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 0px 0px 20px 0px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; max-height: 85vh; display: flex; flex-direction: column;}
         .bottom-sheet-overlay.active .bottom-sheet { transform: translateY(0); }
         
-        /* 🔥 HEADER FOR DRAGGING (Fixed top) */
         .sheet-header { padding: 15px 25px 15px 25px; background: var(--card-bg); border-radius: 30px 30px 0 0; position: sticky; top: 0; z-index: 10; touch-action: none; border-bottom: 1px solid rgba(0,0,0,0.05);}
         .drag-handle-area { width: 100%; height: 20px; display: flex; justify-content: center; align-items: flex-start; cursor: grab; padding-top: 5px; margin-bottom: 5px;}
         .drag-handle { width: 45px; height: 5px; background: #d1d1d6; border-radius: 5px; }
         .sheet-title { font-size: 20px; font-weight: 800; text-align: center; color: var(--text-main); margin: 0; }
         
-        /* 🔥 SCROLLABLE CONTENT AREA */
         .sheet-content { padding: 15px 25px; overflow-y: auto; flex-grow: 1; overscroll-behavior: contain; }
 
         .meal-row { display: flex; justify-content: space-between; align-items: center; background: #f9f9f9; padding: 16px 20px; border-radius: 16px; margin-bottom: 12px; font-weight: 700; font-size: 15px; border: 1px solid #f0f0f0;}
         .meal-row span:last-child { color: var(--primary); font-size: 18px; font-weight: 800; background: rgba(0,122,255,0.1); padding: 4px 12px; border-radius: 10px;}
         
-        /* 🔥 GAP REDUCED FOR SORT OPTIONS */
         .sort-group { margin-bottom: 15px; }
         .sort-group h4 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; font-weight: 700;}
         .sort-option { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f9f9f9; border-radius: 12px; margin-bottom: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: 2px solid transparent;}
@@ -128,7 +130,7 @@
                 <h3>Overdue</h3><h2 id="stat-due">0</h2><p>Click to Filter</p>
             </div>
             <div class="stat-card bg-black" onclick="setFilterAndSort('all', 'smart')">
-                <h3>Capacity</h3><h2 id="stat-total">0</h2><p>Total List</p>
+                <h3>Capacity</h3><h2 id="stat-total">0</h2><p>Regular List</p>
             </div>
             <div class="stat-card bg-blue" onclick="openSheet('meals-sheet')">
                 <h3>Meals</h3><h2 id="stat-meals">0</h2><p>Served Today</p>
@@ -143,8 +145,18 @@
             </button>
         </div>
 
+        <!-- 🔥 GUEST DIRECTORY BUTTON -->
+        <div class="guest-nav-banner" onclick="window.location.href='guest.html'">
+            <div class="guest-icon-small">🏃</div>
+            <div style="flex:1;">
+                <h4 style="margin:0; font-size:16px; color:var(--text-main); font-weight:700;">Guest Directory</h4>
+                <p style="margin:2px 0 0 0; font-size:12px; color:var(--text-muted); font-weight:500;">Manage temporary passes & visitors</p>
+            </div>
+            <div style="color:var(--primary); font-weight:800; font-size:18px;">❯</div>
+        </div>
+
         <div class="section-header">
-            <h4 id="list-title">Directory (Smart Sorted)</h4>
+            <h4 id="list-title">Regular Students (Smart Sorted)</h4>
             <span id="filter-badge" style="display:none; font-size:11px; font-weight:700; color:var(--primary); background:rgba(0,122,255,0.1); padding:4px 10px; border-radius:8px;">Filtered</span>
         </div>
         
@@ -232,13 +244,28 @@
     function startDatabaseSync() {
         db.collection("students").onSnapshot((snap) => {
             allStudents = []; let tTotal = 0, tActive = 0, tDue = 0;
+            
             snap.forEach(doc => {
-                let data = doc.data(); let days = getDaysLeft(data.feeValidTill); data.daysLeft = days; 
-                if(days < 0 && data.status === 'active') { db.collection("students").doc(data.code).update({status: 'fee_due'}); data.status = 'fee_due'; }
+                let data = doc.data(); 
+                
+                // 🔥 GUEST FILTER: Skip guests so they don't mess up main dashboard stats/list
+                if(data.isGuest === true) return; 
+
+                let days = getDaysLeft(data.feeValidTill); data.daysLeft = days; 
+                
+                if(days < 0 && data.status === 'active') { 
+                    db.collection("students").doc(data.code).update({status: 'fee_due'}); 
+                    data.status = 'fee_due'; 
+                }
+                
                 allStudents.push(data); tTotal++;
-                if(data.status === 'active') tActive++; else if(data.status === 'fee_due') tDue++;
+                if(data.status === 'active') tActive++; 
+                else if(data.status === 'fee_due') tDue++;
             });
-            document.getElementById("stat-total").innerText = tTotal; document.getElementById("stat-active").innerText = tActive; document.getElementById("stat-due").innerText = tDue;
+            
+            document.getElementById("stat-total").innerText = tTotal; 
+            document.getElementById("stat-active").innerText = tActive; 
+            document.getElementById("stat-due").innerText = tDue;
             applySortAndFilter();
         });
 
@@ -277,15 +304,19 @@
             else if(currentSort === 'az') return a.name.localeCompare(b.name);
         });
 
-        if(currentFilter !== 'all') { document.getElementById('filter-badge').style.display = 'inline-block'; document.getElementById('filter-badge').innerText = currentFilter.toUpperCase().replace('_', ' '); } 
-        else document.getElementById('filter-badge').style.display = 'none';
+        if(currentFilter !== 'all') { 
+            document.getElementById('filter-badge').style.display = 'inline-block'; 
+            document.getElementById('filter-badge').innerText = currentFilter.toUpperCase().replace('_', ' '); 
+        } else {
+            document.getElementById('filter-badge').style.display = 'none';
+        }
 
         renderList(filtered);
     }
 
     function renderList(list) {
         const container = document.getElementById("student-list"); container.innerHTML = "";
-        if(list.length === 0) { container.innerHTML = `<div style="text-align:center; padding: 30px; color:#888; font-weight:600;">No records found.</div>`; return; }
+        if(list.length === 0) { container.innerHTML = `<div style="text-align:center; padding: 30px; color:#888; font-weight:600;">No regular records found.</div>`; return; }
 
         list.forEach(stu => {
             let badgeClass = 'text-green', badgeText = stu.daysLeft >= 0 ? stu.daysLeft + ' Days' : 'Overdue';
@@ -307,26 +338,19 @@
         document.getElementById('md-b').innerText = b; document.getElementById('md-l').innerText = l; document.getElementById('md-d').innerText = d;
     }
 
-    // --- POPUP/SHEET LOGIC ---
     function openSheet(id) { 
         history.pushState({ modal: id }, id, "#" + id); 
         document.getElementById(id).classList.add('active'); 
-        document.body.classList.add('modal-open'); // 🔥 Locks Background Scrolling
+        document.body.classList.add('modal-open');
     }
     
     function closeSheet(id) {
         if(history.state && history.state.modal === id) { history.back(); } 
-        else { 
-            document.getElementById(id).classList.remove('active'); 
-            document.body.classList.remove('modal-open'); // 🔥 Unlocks Background Scrolling
-        }
+        else { document.getElementById(id).classList.remove('active'); document.body.classList.remove('modal-open'); }
         if(id === 'sort-sheet') applySortAndFilter();
     }
     
-    // 🔥 CLICK OUTSIDE TO CLOSE
-    function closeSheetOutside(e, id) {
-        if(e.target.id === id) { closeSheet(id); }
-    }
+    function closeSheetOutside(e, id) { if(e.target.id === id) { closeSheet(id); } }
 
     window.addEventListener('popstate', function(event) {
         document.getElementById('meals-sheet').classList.remove('active');
@@ -334,32 +358,18 @@
         document.body.classList.remove('modal-open');
     });
 
-    // 🔥 SWIPE DOWN TO CLOSE (NO PULL TO REFRESH)
     function setupSwipeToClose(sheetOverlayId, sheetContentId, headerId) {
         const sheet = document.getElementById(sheetContentId);
         const header = document.getElementById(headerId);
         let startY = 0; let currentY = 0; let isDragging = false;
 
-        header.addEventListener('touchstart', (e) => {
-            startY = e.touches[0].clientY;
-            isDragging = true;
-            sheet.style.transition = 'none';
-        }, {passive: true});
-
+        header.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; isDragging = true; sheet.style.transition = 'none'; }, {passive: true});
         header.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            currentY = e.touches[0].clientY;
-            let deltaY = currentY - startY;
-            if (deltaY > 0) { 
-                e.preventDefault(); // 🔥 STOPS CHROME PULL-TO-REFRESH DURING DRAG
-                sheet.style.transform = `translateY(${deltaY}px)`; 
-            }
-        }, {passive: false}); // passive false zaroori hai preventDefault ke liye
-
+            if (!isDragging) return; currentY = e.touches[0].clientY; let deltaY = currentY - startY;
+            if (deltaY > 0) { e.preventDefault(); sheet.style.transform = `translateY(${deltaY}px)`; }
+        }, {passive: false});
         header.addEventListener('touchend', (e) => {
-            if (!isDragging) return;
-            isDragging = false;
-            sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)';
+            if (!isDragging) return; isDragging = false; sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)';
             let deltaY = currentY - startY;
             if (deltaY > 60) { closeSheet(sheetOverlayId); setTimeout(() => { sheet.style.transform = ''; }, 400); } 
             else { sheet.style.transform = ''; }
