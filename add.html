@@ -18,10 +18,20 @@
         :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --warning: #FF9500; }
         * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 90px; }
+        body.modal-open { overflow: hidden; overscroll-behavior-y: none; }
 
-        .header { padding: 30px 20px 20px 20px; text-align: center; }
+        .header { padding: 30px 20px 15px 20px; text-align: center; }
         .header p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
         .header h1 { margin: 2px 0 0 0; font-size: 28px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px;}
+
+        /* 🔥 PREMIUM GUEST BANNER */
+        .guest-banner { background: linear-gradient(135deg, #1c1c1e, #2c2c2e); margin: 0 20px 20px 20px; border-radius: 20px; padding: 18px 20px; display: flex; align-items: center; cursor: pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.1); transition: 0.2s; }
+        .guest-banner:active { transform: scale(0.97); }
+        .guest-icon { font-size: 32px; margin-right: 15px; background: rgba(255,255,255,0.1); width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; border-radius: 14px;}
+        .guest-text { flex: 1; }
+        .guest-text h4 { color: #fff; margin: 0; font-size: 17px; font-weight: 800; letter-spacing: 0.5px;}
+        .guest-text p { color: #aaa; margin: 3px 0 0 0; font-size: 12px; font-weight: 600;}
+        .guest-arrow { color: #888; font-weight: bold; font-size: 18px; }
 
         /* FORM STYLES */
         .form-card { background: var(--card-bg); margin: 0 20px; border-radius: 24px; padding: 25px; box-shadow: 0 10px 20px rgba(0,0,0,0.04); }
@@ -33,7 +43,6 @@
         .upload-btn { background: rgba(0, 122, 255, 0.08); border: 2px dashed var(--primary); padding: 16px; border-radius: 14px; text-align: center; color: var(--primary); font-weight: 700; position: relative; margin-bottom: 5px;}
         .upload-btn input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;}
         
-        /* DYNAMIC INFO BOX */
         #days-info { display: none; padding: 12px; border-radius: 12px; background: rgba(52, 199, 89, 0.1); color: var(--success); font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 18px; border: 1px dashed var(--success); animation: fadeIn 0.3s ease;}
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -46,17 +55,42 @@
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 24px; margin-bottom: 4px; transition: transform 0.2s; }
         .nav-item:active .nav-icon { transform: scale(0.8); }
+
+        /* ================= GUEST BOTTOM SHEET ================= */
+        .bottom-sheet-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; visibility: hidden; transition: 0.3s; backdrop-filter: blur(3px);}
+        .bottom-sheet-overlay.active { opacity: 1; visibility: visible; }
+        
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; width: 100%; background: var(--card-bg); border-radius: 30px 30px 0 0; padding: 0px 0px 20px 0px; box-shadow: 0 -10px 40px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1); z-index: 1001; max-height: 90vh; display: flex; flex-direction: column;}
+        .bottom-sheet-overlay.active .bottom-sheet { transform: translateY(0); }
+        
+        .sheet-header { padding: 15px 25px 15px 25px; background: var(--card-bg); border-radius: 30px 30px 0 0; position: sticky; top: 0; z-index: 10; touch-action: none; border-bottom: 1px solid rgba(0,0,0,0.05);}
+        .drag-handle-area { width: 100%; height: 20px; display: flex; justify-content: center; align-items: flex-start; cursor: grab; padding-top: 5px; margin-bottom: 5px;}
+        .drag-handle { width: 45px; height: 5px; background: #d1d1d6; border-radius: 5px; }
+        .sheet-title { font-size: 20px; font-weight: 800; text-align: center; color: var(--text-main); margin: 0; }
+        
+        .sheet-content { padding: 15px 25px; overflow-y: auto; flex-grow: 1; overscroll-behavior: contain; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <p>Registration</p>
-        <h1>Add Student</h1>
+        <h1>Add Entry</h1>
+    </div>
+
+    <!-- 🔥 GUEST ENTRY BANNER -->
+    <div class="guest-banner" onclick="openSheet('guest-sheet')">
+        <div class="guest-icon">🏃</div>
+        <div class="guest-text">
+            <h4>Quick Guest Pass</h4>
+            <p>For parents, 1-day visits & single meals</p>
+        </div>
+        <div class="guest-arrow">❯</div>
     </div>
 
     <div class="form-card">
-        <!-- Photo Upload -->
+        <h3 style="margin: 0 0 20px 0; font-size: 16px; color: var(--text-main); border-bottom: 1px solid #f0f0f0; padding-bottom: 10px;">Regular Student</h3>
+        
         <div class="input-group">
             <label>Student Photo</label>
             <div class="upload-btn">
@@ -65,35 +99,31 @@
             </div>
         </div>
         
-        <!-- Basic Info -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
             <div class="input-group"><label>Code (ID)</label><input type="text" id="stu-code" placeholder="101" required></div>
             <div class="input-group"><label>Room No</label><input type="text" id="stu-room" placeholder="A-12" required></div>
         </div>
         <div class="input-group"><label>Full Name</label><input type="text" id="stu-name" placeholder="Student Name" required></div>
         
-        <!-- Dates -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
             <div class="input-group"><label>Start Date</label><input type="date" id="stu-start" onchange="calculateDays()" required></div>
             <div class="input-group"><label>Valid Till</label><input type="date" id="stu-date" onchange="calculateDays()" required></div>
         </div>
 
-        <!-- 🔥 SMART DYNAMIC DAYS DISPLAY (Fixed Inclusive Counting) -->
         <div id="days-info"></div>
         
-        <!-- Payment Details -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
             <div class="input-group"><label>Amount (₹)</label><input type="number" id="stu-amount" placeholder="e.g. 2500"></div>
             <div class="input-group">
                 <label>Pay Mode</label>
                 <select id="stu-pay-mode">
                     <option value="Cash">💵 Cash</option>
-                    <option value="Online">📱 Online / UPI</option>
+                    <option value="Online">📱 Online</option>
                 </select>
             </div>
         </div>
         
-        <button class="btn-main" id="btn-save" onclick="saveStudent()">💾 Save Student Record</button>
+        <button class="btn-main" id="btn-save" onclick="saveStudent(false)">💾 Save Regular Student</button>
     </div>
 
     <!-- BOTTOM NAV -->
@@ -103,41 +133,86 @@
         <a href="setting.html" class="nav-item"><div class="nav-icon">⚙️</div><span>Settings</span></a>
     </div>
 
+    <!-- 🔥 GUEST POPUP SHEET -->
+    <div id="guest-sheet" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'guest-sheet')">
+        <div class="bottom-sheet" id="guest-sheet-content">
+            <div class="sheet-header" id="guest-header">
+                <div class="drag-handle-area"><div class="drag-handle"></div></div>
+                <div class="sheet-title">Guest / Temporary Pass</div>
+            </div>
+            
+            <div class="sheet-content">
+                <p style="font-size:12px; color:var(--text-muted); margin:0 0 15px 0;">No Code or Room required. Auto-expires safely.</p>
+                
+                <div class="input-group">
+                    <label>Guest Photo (Optional)</label>
+                    <div class="upload-btn">
+                        <span id="g-file-name">📸 Tap to Open Camera</span>
+                        <input type="file" id="g-photo" accept="image/*" capture="environment" onchange="previewFile('g-photo', 'g-file-name')">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Guest Name / Details</label>
+                    <input type="text" id="g-name" placeholder="e.g. Rahul's Father (Guest)">
+                </div>
+
+                <div class="input-group">
+                    <label>Pass Duration</label>
+                    <select id="g-duration" onchange="handleGuestDuration()">
+                        <option value="1meal">🍽️ Single Meal (Just Now)</option>
+                        <option value="1day">📅 1 Full Day (Today)</option>
+                        <option value="2days">📅 2 Full Days</option>
+                        <option value="3days">📅 3 Full Days</option>
+                        <option value="custom">⚙️ Custom Dates...</option>
+                    </select>
+                </div>
+
+                <div id="g-custom-dates" style="display:none; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="input-group"><label>Start</label><input type="date" id="g-start-date"></div>
+                    <div class="input-group"><label>Valid Till</label><input type="date" id="g-end-date"></div>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                    <div class="input-group"><label>Amount (₹)</label><input type="number" id="g-amount" placeholder="e.g. 50"></div>
+                    <div class="input-group">
+                        <label>Pay Mode</label>
+                        <select id="g-pay-mode">
+                            <option value="Cash">💵 Cash</option>
+                            <option value="Online">📱 Online</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button class="btn-main" style="background:#1c1c1e;" id="btn-g-save" onclick="saveStudent(true)">⚡ Generate Pass</button>
+            </div>
+        </div>
+    </div>
+
 <script>
     const db = firebase.firestore();
 
     // Default Today's Date
     document.getElementById("stu-start").value = new Date().toISOString().split('T')[0];
 
-    // 🔥 SMART DAYS CALCULATOR LOGIC (Fixed for Inclusive Days)
     function calculateDays() {
-        let startVal = document.getElementById("stu-start").value;
-        let endVal = document.getElementById("stu-date").value;
+        let startVal = document.getElementById("stu-start").value; let endVal = document.getElementById("stu-date").value;
         let infoBox = document.getElementById("days-info");
 
         if(startVal && endVal) {
-            let sDate = new Date(startVal);
-            let eDate = new Date(endVal);
-            
-            // Ignore timezones for raw date difference
+            let sDate = new Date(startVal); let eDate = new Date(endVal);
             let diffTime = eDate.getTime() - sDate.getTime();
-            // +1 added below so that same date counts as 1 day, next date counts as 2 days.
-            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+            let diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 for Inclusive Counting
 
             infoBox.style.display = "block";
-            
             if(diffDays > 0) {
-                infoBox.style.background = "rgba(52, 199, 89, 0.1)";
-                infoBox.style.borderColor = "var(--success)";
+                infoBox.style.background = "rgba(52, 199, 89, 0.1)"; infoBox.style.borderColor = "var(--success)";
                 infoBox.innerHTML = `✅ Registration for <span style="font-size:16px; color:var(--success);">${diffDays} Days</span>`;
             } else {
-                infoBox.style.background = "rgba(255, 59, 48, 0.1)";
-                infoBox.style.borderColor = "var(--danger)";
+                infoBox.style.background = "rgba(255, 59, 48, 0.1)"; infoBox.style.borderColor = "var(--danger)";
                 infoBox.innerHTML = `❌ Invalid Dates <span style="font-size:16px; color:var(--danger);">(${diffDays} Days)</span>`;
             }
-        } else {
-            infoBox.style.display = "none";
-        }
+        } else { infoBox.style.display = "none"; }
     }
 
     function previewFile(inputId, displayId) {
@@ -145,7 +220,6 @@
         if(file) document.getElementById(displayId).innerText = "✅ " + file.name;
     }
 
-    // Image Compression
     function compressImage(file) {
         return new Promise((resolve) => {
             let reader = new FileReader(); reader.readAsDataURL(file);
@@ -162,69 +236,137 @@
         });
     }
 
-    async function saveStudent() {
-        let code = document.getElementById("stu-code").value.trim();
-        let name = document.getElementById("stu-name").value.trim();
-        let room = document.getElementById("stu-room").value.trim();
-        let dateFrom = document.getElementById("stu-start").value;
-        let dateTo = document.getElementById("stu-date").value;
-        let payMode = document.getElementById("stu-pay-mode").value;
-        let amt = document.getElementById("stu-amount").value;
-        let file = document.getElementById("stu-photo").files[0];
+    // --- GUEST SHEET LOGIC ---
+    function openSheet(id) { 
+        history.pushState({ modal: id }, id, "#" + id); 
+        document.getElementById(id).classList.add('active'); 
+        document.body.classList.add('modal-open'); 
+    }
+    
+    function closeSheet(id) {
+        if(history.state && history.state.modal === id) { history.back(); } 
+        else { document.getElementById(id).classList.remove('active'); document.body.classList.remove('modal-open'); }
+    }
 
-        if(!code || !name || !dateTo) {
-            return alert("⚠️ Code, Name and Valid Till Date are required!");
+    function closeSheetOutside(e, id) { if(e.target.id === id) { closeSheet(id); } }
+
+    window.addEventListener('popstate', function() {
+        document.getElementById('guest-sheet').classList.remove('active');
+        document.body.classList.remove('modal-open');
+    });
+
+    function setupSwipeToClose(sheetOverlayId, sheetContentId, headerId) {
+        const sheet = document.getElementById(sheetContentId); const header = document.getElementById(headerId);
+        let startY = 0, currentY = 0, isDragging = false;
+        header.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; isDragging = true; sheet.style.transition = 'none'; }, {passive: true});
+        header.addEventListener('touchmove', (e) => {
+            if (!isDragging) return; currentY = e.touches[0].clientY; let deltaY = currentY - startY;
+            if (deltaY > 0) { e.preventDefault(); sheet.style.transform = `translateY(${deltaY}px)`; }
+        }, {passive: false});
+        header.addEventListener('touchend', () => {
+            if (!isDragging) return; isDragging = false; sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)';
+            let deltaY = currentY - startY;
+            if (deltaY > 60) { closeSheet(sheetOverlayId); setTimeout(() => { sheet.style.transform = ''; }, 400); } 
+            else { sheet.style.transform = ''; }
+        });
+    }
+
+    setupSwipeToClose('guest-sheet', 'guest-sheet-content', 'guest-header');
+
+    function handleGuestDuration() {
+        let val = document.getElementById('g-duration').value;
+        if(val === 'custom') {
+            document.getElementById('g-custom-dates').style.display = 'grid';
+            document.getElementById('g-start-date').value = new Date().toISOString().split('T')[0];
+        } else {
+            document.getElementById('g-custom-dates').style.display = 'none';
+        }
+    }
+
+    // --- MASTER SAVE LOGIC (Handles both Regular & Guest) ---
+    async function saveStudent(isGuest) {
+        let code, name, room, dateFrom, dateTo, payMode, amt, file, btn;
+
+        if (isGuest) {
+            name = document.getElementById("g-name").value.trim();
+            if(!name) return alert("⚠️ Guest Name / Detail is required!");
+            
+            // Auto Generate Code & Room
+            code = "G" + Math.floor(1000 + Math.random() * 9000); // e.g. G8492
+            room = "Guest";
+            
+            // Calculate Dates based on Dropdown
+            let dur = document.getElementById("g-duration").value;
+            let sDate = new Date(); let eDate = new Date();
+            
+            if(dur === '1meal' || dur === '1day') { eDate = new Date(); } 
+            else if(dur === '2days') { eDate.setDate(sDate.getDate() + 1); } 
+            else if(dur === '3days') { eDate.setDate(sDate.getDate() + 2); } 
+            else if(dur === 'custom') {
+                sDate = new Date(document.getElementById('g-start-date').value);
+                eDate = new Date(document.getElementById('g-end-date').value);
+            }
+            
+            dateFrom = sDate.toISOString().split('T')[0];
+            dateTo = eDate.toISOString().split('T')[0];
+            
+            amt = document.getElementById("g-amount").value;
+            payMode = document.getElementById("g-pay-mode").value;
+            file = document.getElementById("g-photo").files[0];
+            
+            btn = document.getElementById("btn-g-save");
+            btn.innerText = "⏳ Generating...";
+
+        } else {
+            // REGULAR STUDENT
+            code = document.getElementById("stu-code").value.trim();
+            name = document.getElementById("stu-name").value.trim();
+            room = document.getElementById("stu-room").value.trim();
+            dateFrom = document.getElementById("stu-start").value;
+            dateTo = document.getElementById("stu-date").value;
+            
+            if(!code || !name || !dateTo) return alert("⚠️ Code, Name and Valid Till Date are required!");
+            let sDate = new Date(dateFrom); let eDate = new Date(dateTo);
+            if(eDate < sDate) return alert("❌ Invalid Date! 'Valid Till' pehle ki date nahi ho sakti.");
+            
+            amt = document.getElementById("stu-amount").value;
+            payMode = document.getElementById("stu-pay-mode").value;
+            file = document.getElementById("stu-photo").files[0];
+            
+            btn = document.getElementById("btn-save");
+            btn.innerText = "⏳ Saving...";
         }
 
-        // Date validation check
-        let sDate = new Date(dateFrom); let eDate = new Date(dateTo);
-        if(eDate < sDate) {
-            return alert("❌ Invalid Date! 'Valid Till' pehle ki date nahi ho sakti.");
-        }
-        
-        let btn = document.getElementById("btn-save");
-        btn.innerText = "⏳ Saving & Uploading...";
-        btn.style.opacity = "0.7";
-        btn.disabled = true;
+        btn.style.opacity = "0.7"; btn.disabled = true;
 
         let photoUrl = `https://ui-avatars.com/api/?name=${name}&background=random&color=fff&size=200`;
         if(file) { photoUrl = await compressImage(file); }
         
-        // INITIAL PAYMENT HISTORY BUILDER
         let paymentHist = [];
         if(amt && parseInt(amt) > 0) {
             let dStr = new Date().toISOString().split('T')[0];
             let dayStr = new Date().toLocaleDateString('en-US', {weekday: 'long'});
-            paymentHist.push({
-                dateAdded: dStr,
-                day: dayStr,
-                amount: amt,
-                mode: payMode,
-                validTill: dateTo
-            });
+            paymentHist.push({ dateAdded: dStr, day: dayStr, amount: amt, mode: payMode, validTill: dateTo });
         }
 
         try {
             await db.collection("students").doc(code).set({ 
-                code: code, 
-                name: name, 
-                room: room, 
-                startDate: dateFrom, 
-                feeValidTill: dateTo, 
-                paymentMode: payMode, 
-                paymentAmount: amt || "0", 
-                photo: photoUrl, 
-                status: "active", 
-                pauseHistory: [],
-                paymentHistory: paymentHist // Saved in history automatically!
+                code: code, name: name, room: room, startDate: dateFrom, feeValidTill: dateTo, 
+                paymentMode: payMode, paymentAmount: amt || "0", photo: photoUrl, status: "active", 
+                pauseHistory: [], paymentHistory: paymentHist 
             });
-            alert("✅ Student Successfully Added!");
+            
+            if(isGuest) {
+                alert(`✅ Guest Pass Generated!\n\nThe Access Code is: ${code}`);
+            } else {
+                alert("✅ Student Successfully Added!");
+            }
             window.location.replace("index.html"); 
+            
         } catch(error) {
             alert("❌ Error saving: " + error.message);
-            btn.innerText = "💾 Save Student Record";
-            btn.style.opacity = "1";
-            btn.disabled = false;
+            btn.innerText = isGuest ? "⚡ Generate Pass" : "💾 Save Student Record";
+            btn.style.opacity = "1"; btn.disabled = false;
         }
     }
 </script>
