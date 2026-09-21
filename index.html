@@ -104,7 +104,10 @@
         .sort-group h4 { font-size: 12px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; font-weight: 700;}
         .sort-option { display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; background: #f9f9f9; border-radius: 12px; margin-bottom: 6px; font-weight: 600; font-size: 14px; cursor: pointer; border: 2px solid transparent;}
         .sort-option.active { border-color: var(--primary); background: rgba(0,122,255,0.05); color: var(--primary);}
-        .btn-sheet-close { width: 100%; background: var(--primary); color: #fff; border: none; padding: 15px; border-radius: 16px; font-size: 16px; font-weight: 700; margin-top: 5px; cursor: pointer; }
+        
+        /* 🔥 UPDATED SHEET CLOSE BUTTON */
+        .btn-sheet-close { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; margin-top: 5px; cursor: pointer; transition: 0.2s; box-shadow: 0 8px 20px rgba(0,122,255,0.25);}
+        .btn-sheet-close:active { transform: scale(0.97); box-shadow: 0 4px 10px rgba(0,122,255,0.15);}
     </style>
 </head>
 <body>
@@ -145,7 +148,7 @@
             </button>
         </div>
 
-        <!-- 🔥 GUEST DIRECTORY BUTTON -->
+        <!-- GUEST DIRECTORY BUTTON -->
         <div class="guest-nav-banner" onclick="window.location.href='guest.html'">
             <div class="guest-icon-small">🏃</div>
             <div style="flex:1;">
@@ -180,7 +183,9 @@
                 <div class="meal-row"><span>🌅 Breakfast</span> <span id="md-b">0</span></div>
                 <div class="meal-row"><span>☀️ Lunch</span> <span id="md-l">0</span></div>
                 <div class="meal-row"><span>🌙 Dinner</span> <span id="md-d">0</span></div>
-                <button class="btn-sheet-close" style="background:#e5e5ea; color:var(--text-main);" onclick="closeSheet('meals-sheet')">Close Details</button>
+                
+                <!-- 🔥 REDIRECT BUTTON TO MEAL.HTML -->
+                <button class="btn-sheet-close" onclick="window.location.href='meal.html'">📊 View More Details</button>
             </div>
         </div>
     </div>
@@ -248,7 +253,7 @@
             snap.forEach(doc => {
                 let data = doc.data(); 
                 
-                // 🔥 GUEST FILTER: Skip guests so they don't mess up main dashboard stats/list
+                // Skip guests so they don't mess up main dashboard stats/list
                 if(data.isGuest === true) return; 
 
                 let days = getDaysLeft(data.feeValidTill); data.daysLeft = days; 
