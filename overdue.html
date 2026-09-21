@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- 🔥 PWA & PREMIUM META TAGS 🔥 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007AFF">
+    
+    <!-- iOS Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OBC Mess">
+    <link rel="apple-touch-icon" href="icon-192.png">
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>OBC Mess - Overdue List</title>
@@ -128,5 +138,16 @@
         renderList(overdueStudents.filter(s => s.name.toLowerCase().includes(q) || s.code.includes(q)));
     }
 </script>
+    <!-- 🔥 REGISTER SERVICE WORKER 🔥 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('Premium PWA Active!'))
+                .catch(err => console.log('PWA Setup Failed', err));
+            });
+        }
+    </script>
+
 </body>
 </html>
