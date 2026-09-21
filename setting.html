@@ -64,6 +64,7 @@
 
         .btn-main { width: 100%; background: var(--primary); color: #fff; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 8px; box-shadow: 0 8px 20px rgba(0,122,255,0.25); }
         .btn-main:active { transform: scale(0.97); }
+        .btn-main:disabled { opacity: 0.7; cursor: not-allowed; }
         .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     </style>
 </head>
@@ -77,7 +78,8 @@
     <!-- SECTION 1: OPERATIONS & DATA -->
     <div class="section-label">Operations & Tools</div>
     <div class="form-card">
-        <div class="setting-item" onclick="downloadPDFInvoice()">
+        <!-- 🔥 TRIGGER DATE POPUP -->
+        <div class="setting-item" onclick="openInvoiceSheet()">
             <div style="display:flex; align-items:center;">
                 <span class="setting-icon icon-dark">🧾</span>
                 <span style="color:#d9534f;">Download Financial Invoice (PDF)</span>
@@ -161,6 +163,22 @@
     </div>
 
     <!-- ================= SHEETS ================= -->
+    
+    <!-- 🔥 NEW: INVOICE DATE SHEET -->
+    <div id="sheet-invoice" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'sheet-invoice')">
+        <div class="bottom-sheet" id="sheet-invoice-content">
+            <div class="sheet-header" id="hdr-invoice"><div class="drag-handle-area"><div class="drag-handle"></div></div><div class="sheet-title">Select Date Range</div></div>
+            <div class="sheet-content">
+                <p style="margin: 0 0 15px 0; font-size:13px; color:var(--text-muted);">Choose the period for your financial invoice report:</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:10px;">
+                    <div class="input-group"><label>From Date</label><input type="date" id="inv-start-date"></div>
+                    <div class="input-group"><label>To Date</label><input type="date" id="inv-end-date"></div>
+                </div>
+                <button class="btn-main" id="btn-generate-pdf" onclick="downloadPDFInvoice()" style="background:#d9534f; box-shadow: 0 8px 20px rgba(217,83,79,0.25);">🧾 Generate PDF Invoice</button>
+            </div>
+        </div>
+    </div>
+
     <!-- PASSWORD SHEET -->
     <div id="sheet-password" class="bottom-sheet-overlay" onclick="closeSheetOutside(event, 'sheet-password')">
         <div class="bottom-sheet" id="sheet-password-content">
@@ -242,206 +260,118 @@
         header.addEventListener('touchmove', (e) => { if (!isDragging) return; currentY = e.touches[0].clientY; let deltaY = currentY - startY; if (deltaY > 0) { e.preventDefault(); sheet.style.transform = `translateY(${deltaY}px)`; } }, {passive: false});
         header.addEventListener('touchend', () => { if (!isDragging) return; isDragging = false; sheet.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1)'; let deltaY = currentY - startY; if (deltaY > 60) { closeSheet(sheetOverlayId); setTimeout(() => { sheet.style.transform = ''; }, 400); } else { sheet.style.transform = ''; } });
     }
+    setupSwipeToClose('sheet-invoice', 'sheet-invoice-content', 'hdr-invoice');
     setupSwipeToClose('sheet-password', 'sheet-password-content', 'hdr-password');
     setupSwipeToClose('sheet-timings', 'sheet-timings-content', 'hdr-timings');
     setupSwipeToClose('sheet-pin', 'sheet-pin-content', 'hdr-pin');
     setupSwipeToClose('sheet-bulk-extend', 'sheet-bulk-extend-content', 'hdr-bulk');
 
-    // --- 1. CHANGE PASSWORD (FIXED) ---
-    async function updatePassword() {
-        let oldPass = document.getElementById("old-pass").value; let newPass = document.getElementById("new-pass").value; let btn = document.getElementById("btn-update-pass");
-        if(!oldPass || !newPass) return alert("All fields are required.");
-        if(newPass.length < 6) return alert("Minimum 6 characters required.");
-        btn.innerText = "⏳ Verifying...";
+    // --- OTHER FEATURES ---
+    async function updatePassword() { /* Same as before */ }
+    async function openTimingsSheet() { /* Same as before */ openSheet('sheet-timings'); }
+    async function saveTimings() { /* Same as before */ closeSheet('sheet-timings'); }
+    async function openPinSheet() { /* Same as before */ openSheet('sheet-pin'); }
+    async function saveGatePin() { /* Same as before */ closeSheet('sheet-pin'); }
+    async function executeBulkExtension() { /* Same as before */ closeSheet('sheet-bulk-extend'); }
+    async function downloadMonthlyReport() { /* Same as before CSV export */ }
+    async function downloadDatabaseBackup() { /* Same as before JSON export */ }
+
+    // 🔥 PREPARE INVOICE SHEET 🔥
+    function openInvoiceSheet() {
+        let today = new Date();
+        let firstDay = new Date(today.getFullYear(), today.getMonth(), 1); // 1st of current month
         
-        try {
-            const user = auth.currentUser; 
-            const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPass);
-            await user.reauthenticateWithCredential(credential); 
-            await user.updatePassword(newPass); 
-            alert("✅ Password Successfully Changed!"); 
-            closeSheet('sheet-password'); 
-            document.getElementById("old-pass").value = "";
-            document.getElementById("new-pass").value = "";
-        } catch(error) { 
-            alert("❌ Failed: " + error.message); 
-        } finally { 
-            btn.innerText = "Save New Password"; 
-        }
-    }
-
-    // --- 2. UPDATE MESS TIMINGS (FIXED) ---
-    async function openTimingsSheet() {
-        openSheet('sheet-timings');
-        try {
-            const doc = await db.collection("config").doc("timings").get();
-            if(doc.exists) { 
-                const d = doc.data(); 
-                document.getElementById('t-b-start').value = d.bStart ?? 8; 
-                document.getElementById('t-b-end').value = d.bEnd ?? 10; 
-                document.getElementById('t-l-start').value = d.lStart ?? 13; 
-                document.getElementById('t-l-end').value = d.lEnd ?? 15; 
-                document.getElementById('t-d-start').value = d.dStart ?? 20; 
-                document.getElementById('t-d-end').value = d.dEnd ?? 22; 
-            } else { 
-                // Default settings if document does not exist
-                document.getElementById('t-b-start').value = 8; 
-                document.getElementById('t-b-end').value = 10; 
-                document.getElementById('t-l-start').value = 13; 
-                document.getElementById('t-l-end').value = 15; 
-                document.getElementById('t-d-start').value = 20; 
-                document.getElementById('t-d-end').value = 22; 
-            }
-        } catch(e) { console.error("Error fetching timings:", e); }
-    }
-
-    async function saveTimings() {
-        const btn = document.getElementById('btn-save-timings'); 
-        btn.innerText = "Saving...";
-        const data = { 
-            bStart: parseInt(document.getElementById('t-b-start').value) || 8, 
-            bEnd: parseInt(document.getElementById('t-b-end').value) || 10, 
-            lStart: parseInt(document.getElementById('t-l-start').value) || 13, 
-            lEnd: parseInt(document.getElementById('t-l-end').value) || 15, 
-            dStart: parseInt(document.getElementById('t-d-start').value) || 20, 
-            dEnd: parseInt(document.getElementById('t-d-end').value) || 22, 
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
-        };
-        try { 
-            await db.collection("config").doc("timings").set(data); 
-            alert("✅ Mess Timings Updated!"); 
-            closeSheet('sheet-timings'); 
-        } catch(e) { alert("Error: " + e.message); } 
-        finally { btn.innerText = "Save Mess Timings"; }
-    }
-
-    // --- 3. GATEKEEPER PASS / PIN (FIXED) ---
-    async function openPinSheet() {
-        openSheet('sheet-pin');
-        try { 
-            const doc = await db.collection("config").doc("gate_security").get(); 
-            if(doc.exists) { 
-                document.getElementById('gate-new-pin').value = doc.data().pin || ""; 
-            } 
-        } catch(e) { console.error(e); }
-    }
-
-    async function saveGatePin() {
-        const pin = document.getElementById('gate-new-pin').value.trim(); 
-        if(!pin) return alert("PIN required.");
+        // Setup default dates
+        document.getElementById("inv-start-date").value = firstDay.toISOString().split('T')[0];
+        document.getElementById("inv-end-date").value = today.toISOString().split('T')[0];
         
-        const btn = document.getElementById('btn-save-pin'); 
-        btn.innerText = "Saving...";
-        
-        try { 
-            await db.collection("config").doc("gate_security").set({ 
-                pin: pin, 
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
-            }); 
-            alert("✅ Gate PIN Updated!"); 
-            closeSheet('sheet-pin'); 
-        } catch(e) { alert("Error: " + e.message); } 
-        finally { btn.innerText = "Update Gate PIN"; }
+        openSheet('sheet-invoice');
     }
 
-    // --- 4. BULK EXPIRY EXTENSION ---
-    async function executeBulkExtension() {
-        const days = parseInt(document.getElementById('bulk-days-input').value); const target = document.getElementById('bulk-target-status').value;
-        if(!days || days < 1) return alert("Enter valid positive days.");
-        if(!confirm(`Extend validity of ${target} students by ${days} days?`)) return;
-        const btn = document.getElementById('btn-bulk-extend'); btn.innerText = "Updating Records..."; btn.disabled = true;
-
-        try {
-            const snap = await db.collection("students").get(); const batch = db.batch(); let count = 0;
-            snap.forEach(doc => {
-                const data = doc.data(); let shouldUpdate = false;
-                if (target === 'active' && data.status === 'active') shouldUpdate = true;
-                if (target === 'all' && (data.status === 'active' || data.status === 'paused')) shouldUpdate = true;
-
-                if (shouldUpdate && data.feeValidTill) {
-                    const currentExp = new Date(data.feeValidTill); currentExp.setDate(currentExp.getDate() + days);
-                    batch.update(doc.ref, { feeValidTill: currentExp.toISOString().split('T')[0] }); count++;
-                }
-            });
-            await batch.commit(); alert(`🎉 Success! ${count} students extended.`); closeSheet('sheet-bulk-extend'); document.getElementById('bulk-days-input').value = "";
-        } catch(e) { alert("Bulk update failed: " + e.message); } finally { btn.innerText = "Extend Validity Now"; btn.disabled = false; }
-    }
-
-    // --- 5. DOWNLOAD MONTHLY ATTENDANCE REPORT ---
-    async function downloadMonthlyReport() {
-        try {
-            const now = new Date(); const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            alert("⏳ Generating attendance report...");
-            const snap = await db.collection("attendance").where("date", ">=", `${monthPrefix}-01`).where("date", "<=", `${monthPrefix}-31`).get();
-            if (snap.empty) return alert("No records found for this month!");
-
-            let csv = "Student Code,Student Name,Room,Meal,Date,Status\n";
-            snap.forEach(doc => { const d = doc.data(); csv += `"${d.code || ''}","${d.name || ''}","${d.room || ''}","${d.meal || ''}","${d.date || ''}","${d.isDue ? "Allowed on Due" : "Verified"}"\n`; });
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `Attendance_${monthPrefix}.csv`; link.click();
-        } catch(e) { alert("Report error: " + e.message); }
-    }
-
-    // --- 6. DATABASE BACKUP ---
-    async function downloadDatabaseBackup() {
-        try {
-            alert("⏳ Downloading database backup...");
-            const snap = await db.collection("students").get(); const data = []; snap.forEach(doc => data.push(doc.data()));
-            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); link.download = `OBC_Mess_Backup_${new Date().toISOString().split('T')[0]}.json`; link.click();
-        } catch(e) { alert("Backup failed: " + e.message); }
-    }
-
-    // --- 7. DOWNLOAD FINANCIAL INVOICE (PDF) ---
+    // 🔥 DOWNLOAD FILTERED FINANCIAL INVOICE (PDF) 🔥
     async function downloadPDFInvoice() {
+        let sDateStr = document.getElementById("inv-start-date").value;
+        let eDateStr = document.getElementById("inv-end-date").value;
+
+        if(!sDateStr || !eDateStr) return alert("Please select both From and To dates.");
+        
+        let sDate = new Date(sDateStr);
+        let eDate = new Date(eDateStr);
+        
+        if(eDate < sDate) return alert("❌ Error: 'To Date' cannot be earlier than 'From Date'.");
+
+        let btn = document.getElementById('btn-generate-pdf');
+        btn.innerText = "⏳ Generating PDF...";
+        btn.disabled = true;
+
         try {
-            let loadingAlert = document.createElement("div");
-            loadingAlert.innerHTML = `<div style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.8); color:#fff; padding:20px; border-radius:15px; z-index:99999; font-weight:bold;">Generating Professional PDF... Please wait.</div>`;
-            document.body.appendChild(loadingAlert);
-
             const snap = await db.collection("students").get();
-            if (snap.empty) { loadingAlert.remove(); return alert("No records found in database!"); }
+            if (snap.empty) { 
+                btn.innerText = "🧾 Generate PDF Invoice"; btn.disabled = false;
+                return alert("No records found in database!"); 
+            }
 
-            let allTransactions = []; let totalAmount = 0; let cashAmount = 0; let onlineAmount = 0;
+            let allTransactions = []; 
+            let totalAmount = 0; let cashAmount = 0; let onlineAmount = 0;
 
             snap.forEach(doc => {
                 const data = doc.data();
                 const hist = data.paymentHistory || [];
                 
                 hist.forEach(h => {
-                    let amt = parseInt(h.amount); if(isNaN(amt)) amt = 0;
-                    let tType = "Payment Received";
-                    if (amt < 0) tType = "Refund / Deduction";
-                    if (data.isGuest) tType = "Guest Pass";
+                    let tDate = new Date(h.dateAdded);
+                    
+                    // 🔥 FILTER BY SELECTED DATES 🔥
+                    if(tDate >= sDate && tDate <= eDate) {
+                        let amt = parseInt(h.amount); if(isNaN(amt)) amt = 0;
+                        let tType = "Payment Received";
+                        if (amt < 0) tType = "Refund / Deduction";
+                        if (data.isGuest) tType = "Guest Pass";
 
-                    allTransactions.push({ date: h.dateAdded, name: data.name || "Unknown", code: data.code || "-", type: tType, mode: h.mode || "Cash", amount: amt });
+                        allTransactions.push({ 
+                            date: h.dateAdded, name: data.name || "Unknown", 
+                            code: data.code || "-", type: tType, mode: h.mode || "Cash", amount: amt 
+                        });
 
-                    totalAmount += amt;
-                    if(h.mode === "Cash") cashAmount += amt;
-                    if(h.mode === "Online") onlineAmount += amt;
+                        totalAmount += amt;
+                        if(h.mode === "Cash") cashAmount += amt;
+                        if(h.mode === "Online") onlineAmount += amt;
+                    }
                 });
             });
 
-            if(allTransactions.length === 0) { loadingAlert.remove(); return alert("No payment history or transactions found in the system!"); }
+            if(allTransactions.length === 0) { 
+                btn.innerText = "🧾 Generate PDF Invoice"; btn.disabled = false;
+                return alert(`No payment transactions found between ${sDateStr} and ${eDateStr}!`); 
+            }
 
+            // Sort by Date (Oldest to Newest)
             allTransactions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
+            // Setup jsPDF
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'pt', 'a4'); 
 
             doc.setFontSize(24); doc.setTextColor(0, 122, 255); doc.setFont("helvetica", "bold"); doc.text("OBC MESS", 40, 60);
             doc.setFontSize(12); doc.setTextColor(100, 100, 100); doc.setFont("helvetica", "normal"); doc.text("Financial Statement & Invoice Report", 40, 80);
 
-            let today = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-            doc.setFontSize(10); doc.text(`Generated On: ${today}`, 550, 60, { align: "right" });
+            // Add Period Text
+            doc.setFontSize(10); doc.setTextColor(150, 150, 150); doc.text(`Period: ${sDateStr} to ${eDateStr}`, 40, 95);
 
-            doc.setDrawColor(200, 200, 200); doc.setFillColor(245, 245, 245); doc.roundedRect(40, 100, 515, 60, 5, 5, 'FD');
-            doc.setFontSize(14); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold"); doc.text(`Total Collection: Rs. ${totalAmount}`, 55, 125);
-            doc.setFontSize(11); doc.setTextColor(52, 199, 89); doc.text(`Cash: Rs. ${cashAmount}`, 300, 125);
-            doc.setTextColor(0, 122, 255); doc.text(`Online: Rs. ${onlineAmount}`, 430, 125);
+            let todayFormatted = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+            doc.text(`Generated On: ${todayFormatted}`, 550, 60, { align: "right" });
 
+            // Summary Box
+            doc.setDrawColor(200, 200, 200); doc.setFillColor(245, 245, 245); doc.roundedRect(40, 105, 515, 60, 5, 5, 'FD');
+            doc.setFontSize(14); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold"); doc.text(`Total Collection: Rs. ${totalAmount}`, 55, 130);
+            doc.setFontSize(11); doc.setTextColor(52, 199, 89); doc.text(`Cash: Rs. ${cashAmount}`, 300, 130);
+            doc.setTextColor(0, 122, 255); doc.text(`Online: Rs. ${onlineAmount}`, 430, 130);
+
+            // Generate Table
             let tableData = allTransactions.map(t => { return [t.date, t.name, t.code, t.type, t.mode, t.amount >= 0 ? `+ Rs. ${t.amount}` : `- Rs. ${Math.abs(t.amount)}`]; });
 
             doc.autoTable({
-                startY: 180,
+                startY: 185,
                 head: [['Date', 'Student / Guest', 'Code', 'Transaction Type', 'Mode', 'Amount']],
                 body: tableData,
                 theme: 'striped',
@@ -456,9 +386,117 @@
                 }
             });
 
-            doc.save(`OBC_Mess_Financial_Report_${today}.pdf`);
-            loadingAlert.remove();
-        } catch(e) { alert("❌ PDF Generation Error: " + e.message); }
+            // Save PDF and Reset UI
+            doc.save(`OBC_Mess_Financial_Report_${sDateStr}_to_${eDateStr}.pdf`);
+            
+            btn.innerText = "🧾 Generate PDF Invoice"; btn.disabled = false;
+            closeSheet('sheet-invoice');
+
+        } catch(e) { 
+            let btn = document.getElementById('btn-generate-pdf');
+            btn.innerText = "🧾 Generate PDF Invoice"; btn.disabled = false;
+            alert("❌ PDF Generation Error: " + e.message); 
+        }
+    }
+    
+    // Unchanged backend functions from previous code...
+    async function updatePassword() {
+        let oldPass = document.getElementById("old-pass").value; let newPass = document.getElementById("new-pass").value; let btn = document.getElementById("btn-update-pass");
+        if(!oldPass || !newPass) return alert("All fields are required.");
+        if(newPass.length < 6) return alert("Minimum 6 characters required.");
+        btn.innerText = "⏳ Verifying...";
+        try {
+            const user = auth.currentUser; 
+            const credential = firebase.auth.EmailAuthProvider.credential(user.email, oldPass);
+            await user.reauthenticateWithCredential(credential); 
+            await user.updatePassword(newPass); 
+            alert("✅ Password Successfully Changed!"); 
+            closeSheet('sheet-password'); 
+            document.getElementById("old-pass").value = "";
+            document.getElementById("new-pass").value = "";
+        } catch(error) { alert("❌ Failed: " + error.message); } finally { btn.innerText = "Save New Password"; }
+    }
+
+    async function openTimingsSheet() {
+        openSheet('sheet-timings');
+        try {
+            const doc = await db.collection("config").doc("timings").get();
+            if(doc.exists) { 
+                const d = doc.data(); 
+                document.getElementById('t-b-start').value = d.bStart ?? 8; document.getElementById('t-b-end').value = d.bEnd ?? 10; 
+                document.getElementById('t-l-start').value = d.lStart ?? 13; document.getElementById('t-l-end').value = d.lEnd ?? 15; 
+                document.getElementById('t-d-start').value = d.dStart ?? 20; document.getElementById('t-d-end').value = d.dEnd ?? 22; 
+            } else { 
+                document.getElementById('t-b-start').value = 8; document.getElementById('t-b-end').value = 10; 
+                document.getElementById('t-l-start').value = 13; document.getElementById('t-l-end').value = 15; 
+                document.getElementById('t-d-start').value = 20; document.getElementById('t-d-end').value = 22; 
+            }
+        } catch(e) { console.error("Error fetching timings:", e); }
+    }
+
+    async function saveTimings() {
+        const btn = document.getElementById('btn-save-timings'); btn.innerText = "Saving...";
+        const data = { 
+            bStart: parseInt(document.getElementById('t-b-start').value) || 8, bEnd: parseInt(document.getElementById('t-b-end').value) || 10, 
+            lStart: parseInt(document.getElementById('t-l-start').value) || 13, lEnd: parseInt(document.getElementById('t-l-end').value) || 15, 
+            dStart: parseInt(document.getElementById('t-d-start').value) || 20, dEnd: parseInt(document.getElementById('t-d-end').value) || 22, 
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp() 
+        };
+        try { await db.collection("config").doc("timings").set(data); alert("✅ Mess Timings Updated!"); closeSheet('sheet-timings'); } 
+        catch(e) { alert("Error: " + e.message); } finally { btn.innerText = "Save Mess Timings"; }
+    }
+
+    async function openPinSheet() {
+        openSheet('sheet-pin');
+        try { const doc = await db.collection("config").doc("gate_security").get(); if(doc.exists) { document.getElementById('gate-new-pin').value = doc.data().pin || ""; } } 
+        catch(e) { console.error(e); }
+    }
+
+    async function saveGatePin() {
+        const pin = document.getElementById('gate-new-pin').value.trim(); if(!pin) return alert("PIN required.");
+        const btn = document.getElementById('btn-save-pin'); btn.innerText = "Saving...";
+        try { await db.collection("config").doc("gate_security").set({ pin: pin, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }); alert("✅ Gate PIN Updated!"); closeSheet('sheet-pin'); } 
+        catch(e) { alert("Error: " + e.message); } finally { btn.innerText = "Update Gate PIN"; }
+    }
+
+    async function executeBulkExtension() {
+        const days = parseInt(document.getElementById('bulk-days-input').value); const target = document.getElementById('bulk-target-status').value;
+        if(!days || days < 1) return alert("Enter valid positive days.");
+        if(!confirm(`Extend validity of ${target} students by ${days} days?`)) return;
+        const btn = document.getElementById('btn-bulk-extend'); btn.innerText = "Updating Records..."; btn.disabled = true;
+        try {
+            const snap = await db.collection("students").get(); const batch = db.batch(); let count = 0;
+            snap.forEach(doc => {
+                const data = doc.data(); let shouldUpdate = false;
+                if (target === 'active' && data.status === 'active') shouldUpdate = true;
+                if (target === 'all' && (data.status === 'active' || data.status === 'paused')) shouldUpdate = true;
+                if (shouldUpdate && data.feeValidTill) {
+                    const currentExp = new Date(data.feeValidTill); currentExp.setDate(currentExp.getDate() + days);
+                    batch.update(doc.ref, { feeValidTill: currentExp.toISOString().split('T')[0] }); count++;
+                }
+            });
+            await batch.commit(); alert(`🎉 Success! ${count} students extended.`); closeSheet('sheet-bulk-extend'); document.getElementById('bulk-days-input').value = "";
+        } catch(e) { alert("Bulk update failed: " + e.message); } finally { btn.innerText = "Extend Validity Now"; btn.disabled = false; }
+    }
+
+    async function downloadMonthlyReport() {
+        try {
+            const now = new Date(); const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            alert("⏳ Generating attendance report...");
+            const snap = await db.collection("attendance").where("date", ">=", `${monthPrefix}-01`).where("date", "<=", `${monthPrefix}-31`).get();
+            if (snap.empty) return alert("No records found for this month!");
+            let csv = "Student Code,Student Name,Room,Meal,Date,Status\n";
+            snap.forEach(doc => { const d = doc.data(); csv += `"${d.code || ''}","${d.name || ''}","${d.room || ''}","${d.meal || ''}","${d.date || ''}","${d.isDue ? "Allowed on Due" : "Verified"}"\n`; });
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' })); link.download = `Attendance_${monthPrefix}.csv`; link.click();
+        } catch(e) { alert("Report error: " + e.message); }
+    }
+
+    async function downloadDatabaseBackup() {
+        try {
+            alert("⏳ Downloading database backup...");
+            const snap = await db.collection("students").get(); const data = []; snap.forEach(doc => data.push(doc.data()));
+            const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })); link.download = `OBC_Mess_Backup_${new Date().toISOString().split('T')[0]}.json`; link.click();
+        } catch(e) { alert("Backup failed: " + e.message); }
     }
 </script>
 </body>
