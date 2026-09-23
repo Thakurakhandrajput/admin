@@ -1,343 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Weekly Menu - OBC Mess</title>
+    
     <!-- 🔥 PWA & PREMIUM META TAGS 🔥 -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#007AFF">
-    
-    <!-- iOS Support -->
+    <meta name="theme-color" content="#f4f6f9">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OBC Mess">
     <link rel="apple-touch-icon" href="icon-192.png">
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OBC Mess - Meal Analytics</title>
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
     <style>
-        /* ================= PREMIUM BASE STYLES ================= */
-        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --success: #34C759; --danger: #FF3B30; --warning: #FF9500; }
-        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 40px; }
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #1d1d1f; --text-muted: #86868b; --primary: #007AFF; --success: #34C759; --warning: #FF9500; }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; -webkit-tap-highlight-color: transparent;}
+        body { background: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 100px; }
 
-        /* ================= APP LOADER ================= */
-        #app-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .spinner { border: 4px solid rgba(0, 122, 255, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        /* Loader */
+        #loader { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-color); z-index:9999; display:flex; justify-content:center; align-items:center;}
+        .spinner { border: 4px solid rgba(0, 122, 255, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        #main-app { display: none; animation: fadeIn 0.4s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* Header */
+        .header { padding: 30px 20px 15px 20px; position: sticky; top: 0; background: rgba(244,246,249,0.9); backdrop-filter: blur(15px); z-index: 50; border-bottom: 1px solid rgba(0,0,0,0.03);}
+        .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;}
+        .header p { margin: 2px 0 0 0; font-size: 13px; color: var(--text-muted); font-weight: 600;}
 
-        /* ================= HEADER ================= */
-        .header { padding: 30px 20px 20px 20px; display: flex; justify-content: space-between; align-items: center; position: relative;}
-        .btn-back { font-size: 24px; font-weight: bold; cursor: pointer; text-decoration: none; color: var(--text-main); padding: 5px; margin-right: 15px;}
-        .header-content { flex: 1; }
-        .header-content p { margin: 0; font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
-        .header-content h1 { margin: 2px 0 0 0; font-size: 28px; font-weight: 800; color: var(--text-main); letter-spacing: -0.5px;}
-
-        /* ================= LIVE STATUS CARD (REMAINING CAPACITY) ================= */
-        .live-card { background: linear-gradient(135deg, #1c1c1e, #2c2c2e); margin: 0 20px 20px 20px; border-radius: 24px; padding: 25px 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); color: #fff; position: relative; overflow: hidden;}
-        .live-card::after { content: '📊'; font-size: 100px; position: absolute; right: -20px; bottom: -20px; opacity: 0.05; }
-        .live-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;}
-        .live-header h3 { margin: 0; font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #aaa;}
-        .live-badge { background: rgba(52, 199, 89, 0.2); color: #4cd964; padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: 800; border: 1px solid rgba(52, 199, 89, 0.3); animation: pulse 2s infinite;}
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
-
-        .stats-row { display: flex; justify-content: space-between; align-items: flex-end; }
-        .stat-block { flex: 1; }
-        .stat-block p { margin: 0; font-size: 12px; color: #888; font-weight: 600; text-transform: uppercase; margin-bottom: 5px;}
-        .stat-block h2 { margin: 0; font-size: 32px; font-weight: 800; color: #fff;}
-        .divider { width: 1px; background: rgba(255,255,255,0.1); margin: 0 15px; }
-
-        /* ================= MONTH FILTER ================= */
-        .controls-row { padding: 0 20px; display: flex; gap: 10px; margin-bottom: 15px; align-items: center; }
-        .select-box { flex: 1; padding: 16px 20px; border-radius: 16px; border: 2px solid transparent; background: var(--card-bg); outline: none; font-size: 15px; font-weight: 700; color: var(--text-main); transition: 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer; appearance: none; -webkit-appearance: none;}
-        .select-box:focus { border-color: var(--primary); }
-        .select-wrapper { position: relative; flex: 1; }
-        .select-wrapper::after { content: '▼'; position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--text-muted); pointer-events: none; }
-
-        /* ================= DAILY LIST CARDS ================= */
-        .section-header { padding: 0 20px; margin-bottom: 10px; }
-        .section-header h4 { margin: 0; font-size: 13px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
-
-        .list-container { padding: 0 20px; display: flex; flex-direction: column; gap: 15px; }
-        .daily-card { background: var(--card-bg); border-radius: 20px; padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.02);}
+        /* Menu Cards */
+        .menu-container { padding: 15px 20px; display: flex; flex-direction: column; gap: 15px; }
+        .day-card { background: var(--card-bg); border-radius: 20px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 2px solid transparent; overflow: hidden; transition: 0.3s;}
         
-        .daily-date { font-size: 16px; font-weight: 800; color: var(--text-main); margin: 0 0 15px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #eee; padding-bottom: 10px;}
-        .daily-date span { font-size: 13px; color: var(--primary); background: rgba(0,122,255,0.1); padding: 4px 10px; border-radius: 10px; font-weight: 700;}
+        .day-header { background: linear-gradient(135deg, #1c1c1e, #2c2c2e); color: #fff; padding: 15px 20px; font-weight: 800; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center;}
+        .today-badge { display: none; background: var(--success); color: #fff; font-size: 10px; padding: 4px 10px; border-radius: 8px; font-weight: 800; letter-spacing: 0.5px;}
 
-        .meal-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .meal-box { background: #f9f9f9; padding: 12px; border-radius: 14px; text-align: center; border: 1px solid #f0f0f0;}
-        .meal-box span { font-size: 18px; display: block; margin-bottom: 5px;}
-        .meal-box h4 { margin: 0; font-size: 20px; font-weight: 800; color: var(--text-main);}
-        .meal-box p { margin: 2px 0 0 0; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;}
+        .day-body { padding: 15px 20px; display: flex; flex-direction: column; gap: 12px;}
+        .meal-row { background: #f9f9f9; padding: 12px 15px; border-radius: 14px; border: 1px solid #f0f0f0;}
+        .meal-row span { font-size: 12px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;}
+        .meal-desc { font-size: 15px; font-weight: 700; color: var(--text-main); line-height: 1.4;}
+
+        /* Student Bottom Nav (3 TABS) */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: rgba(255,255,255,0.95); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-around; padding: 10px 0 25px 0; z-index: 100; align-items: center;}
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: #888; font-size: 10px; font-weight: 700; cursor: pointer; text-decoration: none;}
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; margin-bottom: 4px; transition: 0.2s;}
+        .nav-item:active .nav-icon { transform: scale(0.9); }
+        .nav-item.center-qr .nav-icon { background: var(--text-main); color: #fff; width: 50px; height: 50px; display: flex; justify-content: center; align-items: center; border-radius: 20px; font-size: 26px; box-shadow: 0 8px 20px rgba(0,0,0,0.2); transform: translateY(-10px);}
+        .nav-item.center-qr:active .nav-icon { transform: translateY(-10px) scale(0.9); }
     </style>
 </head>
 <body>
 
-    <div id="app-loader">
-        <div class="spinner"></div>
+    <div id="loader"><div class="spinner"></div></div>
+
+    <div class="header">
+        <h1>Weekly Mess Menu</h1>
+        <p>Real-time updated routine</p>
     </div>
 
-    <div id="main-app">
-        <div class="header">
-            <a href="index.html" class="btn-back">❮</a>
-            <div class="header-content">
-                <p>Statistics & Reports</p>
-                <h1>Meal Analytics</h1>
-            </div>
-        </div>
-
-        <!-- 🔥 LIVE CAPACITY & REMAINING CARD -->
-        <div class="live-card">
-            <div class="live-header">
-                <h3>Today's Live Status</h3>
-                <div class="live-badge" id="current-meal-badge">● Fetching...</div>
-            </div>
-            <div class="stats-row">
-                <div class="stat-block">
-                    <p>Total Capacity</p>
-                    <h2 id="live-capacity">0</h2>
-                </div>
-                <div class="divider"></div>
-                <div class="stat-block" style="text-align:center;">
-                    <p>Meals Served</p>
-                    <h2 id="live-served" style="color:var(--success);">0</h2>
-                </div>
-                <div class="divider"></div>
-                <div class="stat-block" style="text-align:right;">
-                    <p>Remaining</p>
-                    <h2 id="live-remaining" style="color:var(--warning);">0</h2>
-                </div>
-            </div>
-        </div>
-
-        <!-- MONTH FILTER -->
-        <div class="controls-row">
-            <div class="select-wrapper">
-                <select id="month-filter" class="select-box" onchange="renderDailyList()">
-                    <option value="">Loading Months...</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="section-header">
-            <h4>Daily Consumption Record</h4>
-        </div>
+    <div class="menu-container">
         
-        <div class="list-container" id="daily-list">
-            <!-- Data will render here -->
+        <!-- MONDAY -->
+        <div class="day-card" id="card-mon">
+            <div class="day-header">Monday <span class="today-badge" id="badge-mon">TODAY</span></div>
+            <div class="day-body">
+                <div class="meal-row"><span>🌅 Breakfast</span> <div class="meal-desc" id="mon_b">VEGETABLE DALIYA, TEA</div></div>
+                <div class="meal-row"><span>☀️ Lunch</span> <div class="meal-desc" id="mon_l">RAJMA AALU, DAL TADKA, RICE, ROTI, SALAD</div></div>
+                <div class="meal-row"><span>🌙 Dinner</span> <div class="meal-desc" id="mon_d">SEASONAL VEG, DAL FRY, RICE, ROTI, ACHAR</div></div>
+            </div>
         </div>
+
+        <!-- TUESDAY -->
+        <div class="day-card" id="card-tue">
+            <div class="day-header">Tuesday <span class="today-badge" id="badge-tue">TODAY</span></div>
+            <div class="day-body">
+                <div class="meal-row"><span>🌅 Breakfast</span> <div class="meal-desc" id="tue_b">POHA MASALA, TEA</div></div>
+                <div class="meal-row"><span>☀️ Lunch</span> <div class="meal-desc" id="tue_l">AALU CHOLE MASALA, MUNG DAL, RICE, ROTI, SALAD</div></div>
+                <div class="meal-row"><span>🌙 Dinner</span> <div class="meal-desc" id="tue_d">SEASONAL VEG, BLACK MASOOR DAL, RICE, ROTI, ACHAR</div></div>
+            </div>
+        </div>
+
+        <!-- WEDNESDAY -->
+        <div class="day-card" id="card-wed">
+            <div class="day-header">Wednesday <span class="today-badge" id="badge-wed">TODAY</span></div>
+            <div class="day-body">
+                <div class="meal-row"><span>🌅 Breakfast</span> <div class="meal-desc" id="wed_b">PASTA, TEA</div></div>
+                <div class="meal-row"><span>☀️ Lunch</span> <div class="meal-desc" id="wed_l">LAUKI CHANA DAL, JERA ALOO, RICE, ROTI, SALAD</div></div>
+                <div class="meal-row"><span>🌙 Dinner</span> <div class="meal-desc" id="wed_d">SEASONAL VEG, MIX DAL, RICE, ROTI, ACHAR</div></div>
+            </div>
+        </div>
+
+        <!-- THURSDAY -->
+        <div class="day-card" id="card-thu">
+            <div class="day-header">Thursday <span class="today-badge" id="badge-thu">TODAY</span></div>
+            <div class="day-body">
+                <div class="meal-row"><span>🌅 Breakfast</span> <div class="meal-desc" id="thu_b">AALU PURI, TEA</div></div>
+                <div class="meal-row"><span>☀️ Lunch</span> <div class="meal-desc" id="thu_l">MIX VEG, DAL TADKA, RICE, ROTI, SALAD</div></div>
+                <div class="meal-row"><span>🌙 Dinner</span> <div class="meal-desc" id="thu_d">MATAR AALU, MOONG CHILKA DAL, RICE, ROTI, ACHAR</div></div>
+            </div>
+        </div>
+
+        <!-- FRIDAY -->
+        <div class="day-card" id="card-fri">
+            <div class="day-header">Friday <span class="today-badge" id="badge-fri">TODAY</span></div>
+            <div class="day-body">
+                <div class="meal-row"><span>🌅 Breakfast</span> <div class="meal-desc" id="fri_b">PARATHA, TEA</div></div>
+                <div class="meal-row"><span>☀️ Lunch</span> <div class="meal-desc" id="fri_l">AALU TAMATAR, DAL TADKA, RICE, ROTI, SALAD</div></div>
+                <div class="meal-row"><span>🌙 Dinner</span> <div class="meal-desc" id="fri_d">SEASONAL VEG, MIX DAL, RICE, ROTI, ACHAR</div></div>
+            </div>
+        </div>
+
+        <!-- SATURDAY -->
+        <div class="day-card" id="card-sat">
+            <div class="day-header">Saturday <span class="today-badge" id="badge-sat">TODAY</span></div>
+            <div class="day-body">
+                <div class="meal-row"><span>🌅 Breakfast</span> <div class="meal-desc" id="sat_b">BHAJIYA, TEA</div></div>
+                <div class="meal-row"><span>☀️ Lunch</span> <div class="meal-desc" id="sat_l">KADHI PAKODA, JIRA AALU, RICE, ROTI, SALAD</div></div>
+                <div class="meal-row"><span>🌙 Dinner</span> <div class="meal-desc" id="sat_d">AALU SOYA BEAN, MOONG DAL, RICE, ROTI, ACHAR</div></div>
+            </div>
+        </div>
+
+        <!-- SUNDAY -->
+        <div class="day-card" id="card-sun">
+            <div class="day-header">Sunday <span class="today-badge" id="badge-sun">TODAY</span></div>
+            <div class="day-body">
+                <div class="meal-row"><span>🌅 Breakfast</span> <div class="meal-desc" id="sun_b">BLACK CHANA FRY, TEA, HALWA</div></div>
+                <div class="meal-row"><span>☀️ Lunch</span> <div class="meal-desc" id="sun_l">VEG BIRYANI, VEG RAITA, ROTI, SALAD</div></div>
+                <div class="meal-row"><span>🌙 Dinner</span> <div class="meal-desc" id="sun_d">MATAR PANNER, POORI, ACHAR, GULABJAMUN/KHEER or SAWAI</div></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- STUDENT BOTTOM NAV (3 TABS) -->
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-item"><div class="nav-icon">🏠</div><span>Home</span></a>
+        <a href="qr.html" class="nav-item center-qr"><div class="nav-icon">📱</div><span style="margin-top:2px;">Scan QR</span></a>
+        <a href="meal.html" class="nav-item active"><div class="nav-icon">🍽️</div><span>Menu</span></a>
     </div>
 
 <script>
+    // Firebase Config
     const firebaseConfig = { apiKey: "AIzaSyAA2P2IM5aPzJj10XMGLn_9BMSJhKeMGiE", authDomain: "obc-mess-system.firebaseapp.com", projectId: "obc-mess-system", storageBucket: "obc-mess-system.firebasestorage.app", messagingSenderId: "501219370424", appId: "1:501219370424:web:1dddaefc10e8bd21efdb4d" };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const auth = firebase.auth();
 
-    let allAttendance = [];
-    let dailyStats = {}; 
-    let activeCapacity = 0;
-
-    auth.onAuthStateChanged((user) => {
-        if (!user) { window.location.replace("login.html"); } 
-        else { fetchData(); }
-    });
-
-    async function fetchData() {
-        try {
-            // 1. Fetch Capacity (Active Regular + Active Guests)
-            db.collection("students").onSnapshot(snap => {
-                let count = 0;
-                let today = new Date(); today.setHours(0,0,0,0);
-                
-                snap.forEach(doc => {
-                    let d = doc.data();
-                    let target = new Date(d.feeValidTill);
-                    let days = Math.ceil((target - target.getTimezoneOffset()*60000 - today) / (1000 * 60 * 60 * 24));
-                    
-                    // Count if regular active, OR if guest is still valid
-                    if((d.status === 'active' && !d.isGuest && days >= 0) || (d.isGuest && days >= 0)) {
-                        count++;
-                    }
-                });
-                activeCapacity = count;
-                document.getElementById('live-capacity').innerText = activeCapacity;
-                updateLiveStatus(); // Update remaining based on capacity
-            });
-
-            // 2. Fetch Attendance for Analytics
-            db.collection("attendance").onSnapshot(snap => {
-                allAttendance = [];
-                snap.forEach(doc => allAttendance.push(doc.data()));
-                processAttendance();
-                
-                document.getElementById("app-loader").style.display = "none";
-                document.getElementById("main-app").style.display = "block";
-            });
-
-        } catch(error) {
-            console.error("Error fetching data:", error);
-            alert("Error loading analytics data.");
+    // Check Authentication
+    window.onload = () => {
+        let code = localStorage.getItem("studentCode");
+        if(!code) { 
+            window.location.replace("login.html"); 
+        } else {
+            highlightToday();
+            fetchLiveMenu();
         }
     }
 
-    function processAttendance() {
-        dailyStats = {};
-        let monthsSet = new Set();
+    // Highlight Current Day
+    function highlightToday() {
+        const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const today = new Date().getDay();
+        const todayStr = days[today];
 
-        allAttendance.forEach(att => {
-            let dateStr = att.date; // Format: YYYY-MM-DD
-            if(!dateStr) return;
+        let card = document.getElementById(`card-${todayStr}`);
+        let badge = document.getElementById(`badge-${todayStr}`);
 
-            let monthKey = dateStr.substring(0, 7); // Format: YYYY-MM
-            monthsSet.add(monthKey);
-
-            if(!dailyStats[dateStr]) {
-                dailyStats[dateStr] = { b: 0, l: 0, d: 0, total: 0 };
-            }
-
-            let mealType = att.meal.toLowerCase();
-            if(mealType === 'breakfast') dailyStats[dateStr].b++;
-            else if(mealType === 'lunch') dailyStats[dateStr].l++;
-            else if(mealType === 'dinner') dailyStats[dateStr].d++;
+        if(card && badge) {
+            card.style.borderColor = "var(--primary)";
+            card.style.borderWidth = "2px";
+            badge.style.display = "inline-block";
             
-            dailyStats[dateStr].total++;
-        });
-
-        populateMonthDropdown(Array.from(monthsSet));
-        updateLiveStatus();
+            // Auto scroll to today's menu smoothly
+            setTimeout(() => {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 500);
+        }
     }
 
-    function populateMonthDropdown(months) {
-        let select = document.getElementById("month-filter");
-        select.innerHTML = "";
-        
-        if(months.length === 0) {
-            select.innerHTML = `<option value="">No Data Available</option>`;
-            renderDailyList();
-            return;
-        }
-
-        // Sort descending (latest month first)
-        months.sort().reverse();
-
-        months.forEach(m => {
-            let dateObj = new Date(m + "-01");
-            let label = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            select.innerHTML += `<option value="${m}">${label}</option>`;
-        });
-
-        // Auto select current month if exists, else first in list
-        let currentMonthStr = new Date().toISOString().substring(0, 7);
-        if(months.includes(currentMonthStr)) {
-            select.value = currentMonthStr;
-        }
-        
-        renderDailyList();
-    }
-
-    function renderDailyList() {
-        let selectedMonth = document.getElementById("month-filter").value;
-        let container = document.getElementById("daily-list");
-        container.innerHTML = "";
-
-        if(!selectedMonth) {
-            container.innerHTML = `<div style="text-align:center; padding: 40px; color:#888; font-weight:600;">No records found.</div>`;
-            return;
-        }
-
-        // Get dates matching selected month, sort descending (latest date first)
-        let datesInMonth = Object.keys(dailyStats).filter(d => d.startsWith(selectedMonth)).sort().reverse();
-
-        if(datesInMonth.length === 0) {
-            container.innerHTML = `<div style="text-align:center; padding: 40px; color:#888; font-weight:600;">No meals served in this month.</div>`;
-            return;
-        }
-
-        datesInMonth.forEach(dateStr => {
-            let stats = dailyStats[dateStr];
-            let dObj = new Date(dateStr);
-            let dateFormatted = dObj.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-            let dayName = dObj.toLocaleDateString('en-US', { weekday: 'long' });
-
-            container.innerHTML += `
-                <div class="daily-card">
-                    <div class="daily-date">
-                        ${dateFormatted} <span style="color:#888; font-size:12px; background:none; padding:0; font-weight:600;">${dayName}</span>
-                        <span>Total: ${stats.total}</span>
-                    </div>
-                    <div class="meal-grid">
-                        <div class="meal-box">
-                            <span>🌅</span>
-                            <h4>${stats.b}</h4>
-                            <p>Breakfast</p>
-                        </div>
-                        <div class="meal-box">
-                            <span>☀️</span>
-                            <h4>${stats.l}</h4>
-                            <p>Lunch</p>
-                        </div>
-                        <div class="meal-box">
-                            <span>🌙</span>
-                            <h4>${stats.d}</h4>
-                            <p>Dinner</p>
-                        </div>
-                    </div>
-                </div>
-            `;
+    // Fetch Live Updates from Firebase (Overrides Default Menu if Available)
+    function fetchLiveMenu() {
+        db.collection("config").doc("weekly_menu").get().then((doc) => {
+            if(doc.exists) {
+                let data = doc.data();
+                const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+                
+                days.forEach(day => {
+                    // Update only if Admin has added custom data
+                    if(data[`${day}_b`]) document.getElementById(`${day}_b`).innerText = data[`${day}_b`];
+                    if(data[`${day}_l`]) document.getElementById(`${day}_l`).innerText = data[`${day}_l`];
+                    if(data[`${day}_d`]) document.getElementById(`${day}_d`).innerText = data[`${day}_d`];
+                });
+            }
+            document.getElementById("loader").style.display = "none";
+        }).catch(err => {
+            console.error("Error loading live menu, showing default.", err);
+            document.getElementById("loader").style.display = "none";
         });
     }
-
-    function updateLiveStatus() {
-        // Find current meal based on time
-        let now = new Date();
-        let hour = now.getHours();
-        let currentMeal = "";
-        
-        if(hour >= 0 && hour < 11) currentMeal = "Breakfast";
-        else if(hour >= 11 && hour < 17) currentMeal = "Lunch";
-        else currentMeal = "Dinner";
-
-        document.getElementById("current-meal-badge").innerText = `● ${currentMeal} Live`;
-
-        // Get today's stats
-        let todayStr = now.toISOString().split('T')[0];
-        let todayData = dailyStats[todayStr] || { b: 0, l: 0, d: 0, total: 0 };
-        
-        let servedCount = 0;
-        if(currentMeal === "Breakfast") servedCount = todayData.b;
-        else if(currentMeal === "Lunch") servedCount = todayData.l;
-        else if(currentMeal === "Dinner") servedCount = todayData.d;
-
-        document.getElementById("live-served").innerText = servedCount;
-        
-        // Calculate Remaining
-        let remaining = activeCapacity - servedCount;
-        if(remaining < 0) remaining = 0; // Prevent negative if guests push it over normal active count
-        
-        document.getElementById("live-remaining").innerText = remaining;
-    }
-
-    // Update live status every minute in case time shifts from Breakfast to Lunch
-    setInterval(updateLiveStatus, 60000);
-
 </script>
-    <!-- 🔥 REGISTER SERVICE WORKER 🔥 -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('Premium PWA Active!'))
-                .catch(err => console.log('PWA Setup Failed', err));
-            });
-        }
-    </script>
 
+<!-- 🔥 REGISTER SERVICE WORKER 🔥 -->
+<script>
+    if ('serviceWorker' in navigator) { 
+        window.addEventListener('load', () => { 
+            navigator.serviceWorker.register('sw.js')
+            .then(reg => console.log('Premium PWA Active!'))
+            .catch(err => console.log('PWA Setup Failed', err)); 
+        }); 
+    }
+</script>
 </body>
 </html>
